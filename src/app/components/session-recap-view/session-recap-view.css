@@ -1,0 +1,202 @@
+/* Recap Card Wrapper */
+.recap-card-container {
+  background: rgba(15, 23, 42, 0.6);
+  /* Slate 900 translucent */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  width: 100%;
+}
+
+/* Header styling */
+.recap-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1rem;
+}
+
+.recap-card-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.campaign-tag {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #3b82f6;
+  /* Accent Blue */
+  letter-spacing: 0.1em;
+}
+
+.date-badge {
+  font-size: 0.85rem;
+  color: #64748b;
+  /* Slate 500 */
+}
+
+/* Narrative Box */
+.recap-narrative-box {
+  background: rgba(30, 41, 59, 0.25);
+  border-left: 4px solid #3b82f6;
+  border-radius: 4px 12px 12px 4px;
+  padding: 1.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.recap-narrative-text {
+  font-family: 'Merriweather', Georgia, serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  /* Preserve paragraphs */
+}
+
+.quote-icon-top {
+  position: absolute;
+  top: -5px;
+  left: 8px;
+  font-size: 3.5rem;
+  font-family: Georgia, serif;
+  color: rgba(59, 130, 246, 0.1);
+  line-height: 1;
+}
+
+.quote-icon-bottom {
+  position: absolute;
+  bottom: -35px;
+  right: 15px;
+  font-size: 3.5rem;
+  font-family: Georgia, serif;
+  color: rgba(59, 130, 246, 0.1);
+  line-height: 1;
+}
+
+/* Standings Sheet */
+.recap-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.recap-table-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.table-container {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  background: rgba(10, 15, 30, 0.2);
+}
+
+.recap-standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.recap-standings-table th {
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.75rem 1rem;
+  color: #94a3b8;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.recap-standings-table th:hover {
+  background: rgba(30, 41, 59, 0.8);
+  color: #f1f5f9;
+}
+
+.sort-indicator {
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  color: #3b82f6;
+}
+
+.recap-standings-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
+.recap-standings-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.recap-standings-table tr.dm-row td {
+  background: rgba(245, 158, 11, 0.02);
+  /* Amber tint for DM */
+}
+
+.recap-standings-table tr.dm-row:hover td {
+  background: rgba(245, 158, 11, 0.05);
+}
+
+/* Number Columns */
+.num-col {
+  text-align: right;
+}
+
+/* Player Cell details */
+.player-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.player-name-text {
+  font-weight: 500;
+}
+
+.char-cell {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* Standings Cell Highlights */
+.best-cell {
+  background: rgba(16, 185, 129, 0.12) !important;
+  /* Emerald green tint */
+  color: #34d399 !important;
+  /* Emerald green text */
+  font-weight: 600;
+}
+
+.worst-cell {
+  background: rgba(239, 68, 68, 0.12) !important;
+  /* Red tint */
+  color: #f87171 !important;
+  /* Red text */
+}

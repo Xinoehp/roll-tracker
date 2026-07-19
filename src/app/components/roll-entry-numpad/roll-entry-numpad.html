@@ -1,0 +1,168 @@
+<div class="numpad-container">
+  @if (state.activeSession()) {
+    <!-- Active Session Header Info -->
+    <div class="session-banner">
+      <div class="session-meta">
+        <span class="pulse-indicator"></span>
+        <span class="session-name">{{ state.activeSession()?.name }}</span>
+        <span class="session-date">{{ state.activeSession()?.date }}</span>
+        <button class="edit-session-trigger-btn" (click)="state.showEditSessionModal.set(true)" title="Edit Session Info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
+        </button>
+      </div>
+      @if (settings.keyboardShortcutsEnabled()) {
+        <div class="keyboard-guide">
+          <span>Shortcuts: <strong>[Q-Y]</strong> select players • <strong>[1-20]</strong> on numpad/keyboard • <strong>[Backspace]</strong> undo</span>
+        </div>
+      }
+    </div>
+
+    <!-- Active Player Selector Row -->
+    <div class="players-grid">
+      @for (player of state.activeCharactersFiltered(); track player.id; let idx = $index) {
+        @let isActive = state.activeCharacter()?.id === player.id;
+        @let isFlashing = flashingPlayerId() === player.id;
+        @let pStats = getPlayerStats(player.id!);
+        
+        <button 
+          class="player-card" 
+          [class.active]="isActive"
+          [class.flash]="isFlashing"
+          [style.--player-color-glow]="player.color"
+          (click)="selectPlayer(player)"
+        >
+          <!-- Accent Border -->
+          <div class="player-accent-bar" [style.background-color]="player.color"></div>
+          
+          <div class="player-header">
+            <span class="player-name">
+              @if (player.isDM) { 👑 }
+              {{ player.playerName }}
+            </span>
+            @if (settings.keyboardShortcutsEnabled() && idx < playerHotkeys.length) {
+              <span class="hotkey-badge">{{ playerHotkeys[idx] }}</span>
+            }
+          </div>
+          @if (player.name && player.name !== player.playerName) {
+            <div class="player-character-sub">
+              {{ player.name }}
+            </div>
+          }
+
+          <div class="player-quick-stats">
+            <div class="stat-item">
+              <span class="label">Rolls</span>
+              <span class="value">{{ pStats.totalRolls }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Avg</span>
+              <span class="value">{{ pStats.average | number:'1.1-1' }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">Luck</span>
+              <span class="value" [class.lucky]="pStats.luckAmount > 0" [class.unlucky]="pStats.luckAmount < 0">
+                {{ pStats.luckAmount | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
+        </button>
+      }
+    </div>
+
+    <!-- Main Workspace (Numpad + Side Log) -->
+    <div class="workspace-grid">
+      
+      <!-- D20 Numpad Grid -->
+      <div class="numpad-panel">
+        <div class="numpad-header">
+          <div class="active-player-banner" [style.border-color]="state.activeCharacter()?.color">
+            <span class="active-player-dot" [style.background-color]="state.activeCharacter()?.color"></span>
+            Logging roll for 
+            <strong>{{ state.activeCharacter()?.playerName }}</strong>
+            @if (state.activeCharacter()?.name && state.activeCharacter()?.name !== state.activeCharacter()?.playerName) {
+              <span class="active-char-sub">({{ state.activeCharacter()?.name }})</span>
+            }
+          </div>
+          
+          <!-- Typing Buffer Indicator -->
+          @if (inputBuffer) {
+            <div class="buffer-overlay">
+              <span class="buffer-spinner"></span>
+              Typing: <strong>{{ inputBuffer }}</strong>...
+            </div>
+          }
+        </div>
+
+        <div class="d20-grid">
+          @for (num of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track num) {
+            @let isButtonFlashing = flashingButtonValue() === num;
+            <button 
+              class="d20-btn"
+              [class.crit-fail]="num === 1"
+              [class.crit-success]="num === 20"
+              [class.flash]="isButtonFlashing"
+              [class.active-player-themed]="num !== 1 && num !== 20"
+              [style.--active-player-color]="state.activeCharacter()?.color"
+              (click)="onNumpadTap(num)"
+            >
+              <span class="d20-number">{{ num }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Live Session Feed / Log -->
+      <div class="feed-panel">
+        <div class="feed-header">
+          <h3>Recent Rolls</h3>
+          <button 
+            class="undo-btn" 
+            [class.flash]="undoFlashActive()" 
+            [disabled]="state.rolls().length === 0"
+            (click)="triggerUndo()"
+            title="Undo last roll (Backspace)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            Undo Last
+          </button>
+        </div>
+
+        <div class="rolls-feed-list">
+          @if (recentRolls().length === 0) {
+            <div class="empty-feed">
+              <p>No rolls logged in this session yet.</p>
+              <p class="hint">Tap the numpad or use keyboard shortcuts to enter rolls!</p>
+            </div>
+          } @else {
+            @for (roll of recentRolls(); track roll.id) {
+              <div class="feed-item" [style.--player-border-color]="getPlayerColor(roll.characterId)">
+                <div class="feed-item-left">
+                  <span class="player-dot" [style.background-color]="getPlayerColor(roll.characterId)"></span>
+                  <span class="player-name">{{ getPlayerName(roll.characterId) }}</span>
+                </div>
+                <div class="feed-item-right">
+                  <span class="roll-badge" 
+                        [class.crit-fail]="roll.value === 1" 
+                        [class.crit-success]="roll.value === 20">
+                    {{ roll.value }}
+                  </span>
+                  <button class="delete-roll-btn" (click)="state.deleteRoll(roll.id!)" title="Delete roll">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+    </div>
+  } @else {
+    <!-- Empty State / No active session -->
+    <div class="no-session-card">
+      <div class="card-icon">🎲</div>
+      <h2>No Active Session Selected</h2>
+      <p>Select a campaign and session from the side controls or create a new one to start logging dice rolls!</p>
+    </div>
+  }
+</div>

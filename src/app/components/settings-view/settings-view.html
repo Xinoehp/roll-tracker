@@ -1,0 +1,43 @@
+<div class="settings-container">
+  <div class="settings-card">
+    <div class="settings-header">
+      <h2>⚙️ Application Settings</h2>
+      <p class="settings-subtitle">Configure your rolling experience and database storage.</p>
+    </div>
+
+    <!-- Section: General Preferences -->
+    <div class="settings-section">
+      <h3>Keyboard & Shortcuts</h3>
+      <div class="settings-row">
+        <div class="settings-info">
+          <span class="settings-label">Enable Keyboard Shortcuts</span>
+          <span class="settings-description">
+            Allows using Q-Y keys to switch players, digits to enter values, and Backspace to undo rolls.
+          </span>
+        </div>
+        <div class="toggle-container">
+          <label class="switch">
+            <input type="checkbox" [checked]="settings.keyboardShortcutsEnabled()" (change)="toggleShortcuts($event)">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Danger Zone -->
+    <div class="settings-section danger-section">
+      <h3>Danger Zone</h3>
+      <div class="settings-row">
+        <div class="settings-info">
+          <span class="settings-label text-danger">Reset Application Database</span>
+          <span class="settings-description">
+            Permanently delete all campaigns, players, characters, sessions, and roll history from this browser. This action cannot be reversed.
+          </span>
+        </div>
+        <button class="btn btn-danger" (click)="clearAllData()">
+          🗑️ Clear All Data
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,475 @@
+@if (sharedRecapData()) {
+<!-- Standalone Share Landing Page -->
+<div class="shared-landing-container">
+  <header class="shared-header-banner">
+    <div class="shared-banner-left">
+      <img class="shared-logo-img" src="/logo.jpg" alt="Roll Stats Logo" />
+      <h1>Roll Stats</h1>
+    </div>
+    <a href="/" class="btn btn-primary shared-action-btn">Launch Tracker App</a>
+  </header>
+  <main class="shared-page-content">
+    <app-session-recap-view [campaignName]="sharedRecapData().c" [sessionName]="sharedRecapData().s"
+      [sessionDate]="sharedRecapData().d" [recapText]="sharedRecapData().r"
+      [playersData]="sharedPlayers()"></app-session-recap-view>
+  </main>
+</div>
+} @else {
+<!-- Regular App Dashboard Container -->
+<div class="app-container" [style.grid-template-columns]="sidebarWidth() + 'px auto 1fr'">
+
+  <!-- Sidebar Panel -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <img class="logo-img" src="/logo.jpg" alt="Roll Stats Logo" />
+      <h1>Roll Stats</h1>
+    </div>
+
+    <!-- Campaigns Section -->
+    <div class="sidebar-section">
+      <div class="section-title-row">
+        <h3>Campaigns</h3>
+        <button class="add-small-btn" (click)="showCampaignForm.set(true)" title="Add Campaign">+</button>
+      </div>
+      <div class="select-container">
+        <select [value]="state.activeCampaign()?.id || ''" (change)="selectCampaignById(+$any($event.target).value)">
+          @for (camp of campaignsList(); track camp.id) {
+          <option [value]="camp.id" [selected]="state.activeCampaign()?.id === camp.id">
+            {{ camp.name }}
+          </option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Sessions Section -->
+    <div class="sidebar-section">
+      <div class="section-title-row">
+        <h3>Sessions</h3>
+        <button class="add-small-btn" (click)="showSessionForm.set(true)" title="Create Session">+</button>
+      </div>
+      <div class="scroll-list">
+        @if (sessionsList().length === 0) {
+        <div class="empty-list-text">No sessions. Click + to add.</div>
+        } @else {
+        @for (sess of sessionsList(); track sess.id) {
+        <button class="list-item" [class.active]="state.activeSession()?.id === sess.id" (click)="selectSession(sess)">
+          <div class="list-item-content">
+            <span class="sess-title">{{ sess.name }}</span>
+            <span class="sess-date">{{ sess.date }}</span>
+          </div>
+        </button>
+        }
+        }
+      </div>
+    </div>
+
+    <!-- Players Management Section -->
+    <div class="sidebar-section players-section">
+      <div class="section-title-row">
+        <h3>Campaign Players</h3>
+        <button class="add-small-btn" (click)="showPlayerForm.set(true)" title="Add Player">+</button>
+      </div>
+      <div class="scroll-list players-list">
+        @if (state.activeCharacters().length === 0) {
+        <div class="empty-list-text">No players. Click + to add.</div>
+        } @else {
+        @for (player of state.activeCharacters(); track player.id) {
+        <div class="player-list-item" [class.inactive-player-row]="!player.isActive">
+          <div class="player-info">
+            <span class="player-indicator-dot" [style.background-color]="player.color"></span>
+            <span class="player-name">
+              @if (player.isDM) { 👑 }
+              {{ player.playerName }}
+              @if (player.name && player.name !== player.playerName) {
+              <span class="player-char-name">({{ player.name }})</span>
+              }
+            </span>
+          </div>
+          <div class="player-actions-row">
+            <button class="toggle-active-btn" (click)="toggleCharacterActive(player.id!, $event)"
+              [title]="player.isActive ? 'Hide Player from Numpad' : 'Show Player on Numpad'">
+              {{ player.isActive ? '👁️' : '🙈' }}
+            </button>
+            <button class="edit-item-small-btn" (click)="openEditPlayerForm(player, $event)"
+              title="Edit Player Details">
+              ✏️
+            </button>
+            @if (state.activeCharacters().length > 1) {
+            <button class="delete-item-btn" (click)="handleRemovePlayer(player.id!, $event)"
+              title="Remove Player from Campaign">
+              ×
+            </button>
+            }
+          </div>
+        </div>
+        }
+        }
+      </div>
+    </div>
+
+    <!-- Sidebar Footer (Backup & Restore) -->
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn" (click)="exportDatabase()"
+        title="Export all campaigns, players, and rolls to a JSON backup file">
+        💾 Backup Data
+      </button>
+      <button class="sidebar-footer-btn" (click)="restoreFileInput.click()"
+        title="Restore database from a previously exported JSON backup file">
+        📂 Restore Backup
+      </button>
+      <input #restoreFileInput type="file" style="display: none" accept=".json" (change)="importDatabase($event)" />
+    </div>
+  </aside>
+
+  <!-- Sidebar Resizer Handle -->
+  <div class="sidebar-resizer" (mousedown)="startResizing($event)"></div>
+
+  <!-- Main Workspace Area -->
+  <main class="app-main-content">
+
+    <!-- Top Navigation Tabs Bar -->
+    <header class="app-nav-bar">
+      <div class="tabs-group">
+        <button class="nav-tab" [class.active]="activeTab() === 'numpad'" (click)="activeTab.set('numpad')">
+          📊 Roll Entry
+        </button>
+        <button class="nav-tab" [class.active]="activeTab() === 'analytics'" (click)="activeTab.set('analytics')">
+          📈 Analytics
+        </button>
+        <button class="nav-tab" [class.active]="activeTab() === 'logs'" (click)="activeTab.set('logs')">
+          📋 Roll Logs
+        </button>
+        <button class="nav-tab" [class.active]="activeTab() === 'recap'" (click)="activeTab.set('recap')">
+          📝 Recaps
+        </button>
+        <button class="nav-tab" [class.active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">
+          ⚙️ Settings
+        </button>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+      </div>
+
+      <!-- Quick Status Widget -->
+      @if (state.activeCampaign()) {
+      <div class="campaign-status-widget">
+        <span class="widget-camp">{{ state.activeCampaign()?.name }}</span>
+        @if (state.activeSession()) {
+        <span class="widget-sess">
+          {{ state.activeSession()?.name }}
+          <button class="edit-sess-name-btn" (click)="state.showEditSessionModal.set(true)"
+            title="Edit Session Name/Date">✏️</button>
+        </span>
+        }
+      </div>
+      }
+    </header>
+
+    <!-- Active Tab Render Container -->
+    <section class="tab-content-container">
+      @if (activeTab() === 'numpad') {
+      <app-roll-entry-numpad></app-roll-entry-numpad>
+      }
+
+      @if (activeTab() === 'analytics') {
+      <app-analytics-dashboard></app-analytics-dashboard>
+      }
+
+      @if (activeTab() === 'logs') {
+      <app-recent-rolls-feed></app-recent-rolls-feed>
+      }
+
+      @if (activeTab() === 'recap') {
+      <div class="recap-tab-layout">
+        <!-- Top Controls bar inside the tab -->
+        <div class="recap-tab-header">
+          <div class="recap-scope-toggle">
+            <button class="scope-btn" [class.active]="recapType() === 'session'" (click)="setRecapType('session')">
+              ⏱️ Current Session
+            </button>
+            <button class="scope-btn" [class.active]="recapType() === 'campaign'" (click)="setRecapType('campaign')">
+              👑 Entire Campaign
+            </button>
+          </div>
+        </div>
+
+        <!-- Split view: configuration vs standalone preview -->
+        <div class="recap-tab-body">
+          <!-- Left Configuration Pane -->
+          <div class="recap-config-pane">
+
+            <!-- Attendance -->
+            <div class="config-section">
+              <h4>👥 Present Players</h4>
+              @if (hasHiddenPlayers()) {
+                <div class="recap-hidden-players-hint">
+                  💡 Inactive campaign players are hidden. Toggle visibility in the sidebar to include them.
+                </div>
+              }
+              <div class="attendance-grid">
+                @for (char of activeRecapCharacters(); track char.id) {
+                <label class="attendance-checkbox-label" [class.absent]="!recapAttendance()[char.id!]">
+                  <input type="checkbox" [checked]="recapAttendance()[char.id!]"
+                    (change)="toggleRecapAttendance(char.id!)" />
+                  <span class="attendance-indicator"
+                    [style.background-color]="recapAttendance()[char.id!] ? char.color : '#475569'"></span>
+                  <span class="name-span">{{ char.playerName }}</span>
+                </label>
+                }
+              </div>
+            </div>
+
+            <!-- Highlights list per player -->
+            <div class="config-section highlights-list-section">
+              <h4>🛡️ Statistical Highlights</h4>
+              <div class="players-highlights-container">
+                @for (char of activeRecapCharacters(); track char.id) {
+                @if (recapAttendance()[char.id!]) {
+                <div class="player-highlights-block">
+                  <h5>
+                    <span class="player-indicator-dot" [style.background-color]="char.color"></span>
+                    {{ char.playerName }} @if (char.name && char.name !== char.playerName) { <span
+                      class="char-sub-name">({{ char.name }})</span> }
+                  </h5>
+                  <div class="checkbox-highlights-group">
+                    @for (h of recapAvailableHighlights()[char.id!]; track h.id) {
+                    <label class="highlight-checkbox-row">
+                      <input type="checkbox" [checked]="(recapSelectedHighlights()[char.id!] || []).includes(h.id)"
+                        (change)="toggleRecapHighlight(char.id!, h.id)" />
+                      <span class="highlight-emoji">{{ h.emoji }}</span>
+                      <span class="highlight-label-text">{{ h.label }}</span>
+                    </label>
+                    }
+                    @if ((recapAvailableHighlights()[char.id!] || []).length === 0) {
+                    <div class="no-highlights-hint">No rolls logged. Select "The silent" to include them.</div>
+                    }
+                  </div>
+                </div>
+                }
+                }
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Standalone Preview Pane -->
+          <div class="recap-preview-pane">
+            <h4>✍️ Standalone Preview</h4>
+            <div class="live-preview-box">
+              <app-session-recap-view [campaignName]="state.activeCampaign()?.name || ''"
+                [sessionName]="recapType() === 'session' ? (state.activeSession()?.name || '') : 'Campaign Summary'"
+                [sessionDate]="recapType() === 'session' ? (state.activeSession()?.date || '') : 'All Time'"
+                [recapText]="getCompiledRecapText()" [playersData]="getRecapPreviewData()"></app-session-recap-view>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      }
+
+      @if (activeTab() === 'settings') {
+        <app-settings-view></app-settings-view>
+      }
+    </section>
+
+    <!-- Global App Bottom Bar -->
+    <footer class="app-bottom-bar">
+      @if (activeTab() === 'recap') {
+        <div class="recap-bar-content">
+          <div class="actions-left">
+            <button class="btn btn-secondary btn-small" (click)="copyRawStatsForLLM()" title="Copy Markdown stats payload to clipboard">
+              📋 Copy Raw Stats
+            </button>
+            <button class="btn btn-secondary btn-small" (click)="copyCompiledRecapText()" title="Copy narrative text only">
+              ✍️ Copy Text Recap
+            </button>
+            @if (recapAlertMessage()) {
+              <span class="recap-toast-msg">{{ recapAlertMessage() }}</span>
+            }
+          </div>
+          <div class="actions-right">
+            <button class="btn btn-primary btn-small" (click)="generateShareLink()" title="Generate compressed web URL and copy to clipboard">
+              🔗 Generate Share Link
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="bottom-bar-default-content">
+          <span class="status-indicator"><span class="status-dot">●</span> Connected</span>
+          <span class="version-text">Dice Tracker v1.2.0</span>
+        </div>
+      }
+    </footer>
+  </main>
+
+  <!-- Add Campaign Modal -->
+  @if (showCampaignForm()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Create New Campaign</h3>
+      <div class="form-group">
+        <label>Campaign Name</label>
+        <input type="text" placeholder="e.g., Curse of Strahd" [value]="newCampaignName()"
+          (input)="setNewCampaignName($event)" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" placeholder="e.g., Friday night horror campaign" [value]="newCampaignDesc()"
+          (input)="setNewCampaignDesc($event)" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="showCampaignForm.set(false)">Cancel</button>
+        <button class="btn btn-primary" [disabled]="!newCampaignName().trim()"
+          (click)="handleCreateCampaign()">Create</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Add Session Modal -->
+  @if (showSessionForm()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Create New Session</h3>
+      <div class="form-group">
+        <label>Session Name</label>
+        <input type="text" placeholder="e.g., Session 42" [value]="newSessionName()"
+          (input)="setNewSessionName($event)" />
+      </div>
+      <div class="form-group">
+        <label>Session Date</label>
+        <input type="date" [value]="newSessionDate()" (input)="setNewSessionDate($event)" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="showSessionForm.set(false)">Cancel</button>
+        <button class="btn btn-primary" [disabled]="!newSessionName().trim() || !newSessionDate().trim()"
+          (click)="handleCreateSession()">Add Session</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Add Character Modal -->
+  @if (showPlayerForm()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Add Character to Campaign</h3>
+
+      <div class="form-group">
+        <label>Assign to Player</label>
+        <select [value]="selectedPlayerId()" (change)="setSelectedPlayerId($event)" class="form-select">
+          <option value="new">+ Create New Player</option>
+          @for (player of globalPlayers(); track player.id) {
+          <option [value]="player.id">{{ player.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (selectedPlayerId() === 'new') {
+      <div class="form-group">
+        <label>New Player Name</label>
+        <input type="text" placeholder="e.g., Tom" [value]="newPlayerName()" (input)="setNewPlayerName($event)" />
+      </div>
+      }
+
+      <div class="form-group">
+        <label>Character Name (Required)</label>
+        <input type="text" placeholder="e.g., Aron (Fighter)" [value]="newPlayerCharName()"
+          (input)="setNewPlayerCharName($event)" />
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [checked]="newPlayerIsDM()" (change)="setNewPlayerIsDM($event)" />
+          Is Dungeon Master (DM) 👑
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Pick Theme Color</label>
+        <div class="color-picker-grid">
+          @for (color of presetColors; track color) {
+          <button type="button" class="color-dot-btn" [class.selected]="newPlayerColor() === color"
+            [style.background-color]="color" (click)="setNewPlayerColor(color)"></button>
+          }
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="showPlayerForm.set(false)">Cancel</button>
+        <button class="btn btn-primary"
+          [disabled]="!newPlayerCharName().trim() || (selectedPlayerId() === 'new' && !newPlayerName().trim())"
+          (click)="handleAddPlayer()">
+          Add Character
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Edit Session Modal -->
+  @if (state.showEditSessionModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Edit Session Details</h3>
+      <div class="form-group">
+        <label>Session Name</label>
+        <input type="text" placeholder="e.g., Session 1" [value]="editSessionName()"
+          (input)="setEditSessionName($event)" />
+      </div>
+      <div class="form-group">
+        <label>Session Date</label>
+        <input type="date" [value]="editSessionDate()" (input)="setEditSessionDate($event)" />
+      </div>
+      <div class="form-group">
+        <label>Session Notes</label>
+        <textarea placeholder="Optional notes or summary..." [value]="editSessionNotes()"
+          (input)="setEditSessionNotes($event)" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="state.showEditSessionModal.set(false)">Cancel</button>
+        <button class="btn btn-primary" [disabled]="!editSessionName().trim() || !editSessionDate().trim()"
+          (click)="handleUpdateSession()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Edit Player Modal -->
+  @if (showEditPlayerForm()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Edit Character Details</h3>
+      <div class="form-group">
+        <label>Character Name (Required)</label>
+        <input type="text" placeholder="e.g., Aron (Fighter)" [value]="editPlayerCharName()"
+          (input)="setEditPlayerCharName($event)" />
+      </div>
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [checked]="editPlayerIsDM()" (change)="setEditPlayerIsDM($event)" />
+          Is Dungeon Master (DM) 👑
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Theme Color</label>
+        <div class="color-picker-grid">
+          @for (color of presetColors; track color) {
+          <button type="button" class="color-dot-btn" [class.selected]="editPlayerColor() === color"
+            [style.background-color]="color" (click)="setEditPlayerColor(color)"></button>
+          }
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="showEditPlayerForm.set(false)">Cancel</button>
+        <button class="btn btn-primary" [disabled]="!editPlayerCharName().trim()" (click)="handleUpdatePlayer()">Save
+          Changes</button>
+      </div>
+    </div>
+  </div>
+  }
+
+
+
+</div>
+}

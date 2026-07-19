@@ -1,0 +1,213 @@
+<div class="analytics-container">
+  
+  <!-- Dashboard Header and Tabs -->
+  <div class="dashboard-header">
+    <div class="dashboard-title">
+      <h2>Analytics & Statistics</h2>
+      <p class="subtitle">Real-time dice performance metrics and luck analysis</p>
+    </div>
+    
+    <div class="scope-toggle-group">
+      <button 
+        class="toggle-btn" 
+        [class.active]="statsScope() === 'session'"
+        (click)="setScope('session')"
+      >
+        Current Session
+      </button>
+      <button 
+        class="toggle-btn" 
+        [class.active]="statsScope() === 'campaign'"
+        (click)="setScope('campaign')"
+      >
+        Entire Campaign
+      </button>
+      <button 
+        class="toggle-btn" 
+        [class.active]="statsScope() === 'global'"
+        (click)="setScope('global')"
+      >
+        All Campaigns (Global)
+      </button>
+    </div>
+  </div>
+
+  @if (currentStats()) {
+    @let statsObj = currentStats()!;
+
+    <!-- KPI Overview Cards -->
+    <div class="kpi-grid">
+      <!-- Total Rolls -->
+      <div class="kpi-card">
+        <span class="kpi-label">Total Rolls</span>
+        <span class="kpi-value">{{ statsObj.totalRolls }}</span>
+        <span class="kpi-subtext">Sum of rolls: {{ statsObj.sum }}</span>
+      </div>
+
+      <!-- Average Roll -->
+      <div class="kpi-card">
+        <span class="kpi-label">Average Roll</span>
+        <span class="kpi-value">{{ statsObj.average | number:'1.2-2' }}</span>
+        <span class="kpi-subtext">Expected average: 10.5</span>
+      </div>
+
+      <!-- Luck Percentage -->
+      <div class="kpi-card">
+        <span class="kpi-label">Lucky Rolls %</span>
+        <span class="kpi-value">{{ statsObj.luckPercentage | percent:'1.1-1' }}</span>
+        <span class="kpi-subtext">Rolls > 10 (11 or higher)</span>
+      </div>
+
+      <!-- Luck Amount -->
+      <div class="kpi-card">
+        <span class="kpi-label">Luck Factor</span>
+        <span class="kpi-value" [class.lucky]="statsObj.luckAmount > 0" [class.unlucky]="statsObj.luckAmount < 0">
+          {{ statsObj.luckAmount | number:'1.3-3' }}
+        </span>
+        <span class="kpi-subtext">Scaled index (-1.0 to +1.0)</span>
+      </div>
+
+      <!-- Critical Failures -->
+      <div class="kpi-card crit-fail-card">
+        <span class="kpi-label">Natural 1s</span>
+        <span class="kpi-value">{{ statsObj.nat1Count }}</span>
+        <span class="kpi-subtext">Avg per 20: {{ statsObj.avgNat1sPer20 | number:'1.2-2' }}</span>
+      </div>
+
+      <!-- Critical Successes -->
+      <div class="kpi-card crit-success-card">
+        <span class="kpi-label">Natural 20s</span>
+        <span class="kpi-value">{{ statsObj.nat20Count }}</span>
+        <span class="kpi-subtext">Avg per 20: {{ statsObj.avgNat20sPer20 | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <!-- Standings Table Panel -->
+    <div class="table-panel">
+      <div class="table-header">
+        <h3>Player Standings</h3>
+        @if (isLoadingCampaignStats() && statsScope() === 'campaign') {
+          <span class="loader-text">Recalculating database...</span>
+        }
+      </div>
+
+      <div class="table-responsive">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <!-- Sortable Headers -->
+              <th class="col-player sortable" (click)="toggleSort('player')">
+                Player
+                @if (sortField() === 'player') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('rolls')">
+                Rolls
+                @if (sortField() === 'rolls') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('sum')">
+                Sum
+                @if (sortField() === 'sum') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('average')">
+                Average
+                @if (sortField() === 'average') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('lucky')">
+                Lucky %
+                @if (sortField() === 'lucky') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('luckFactor')">
+                Luck Factor
+                @if (sortField() === 'luckFactor') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('nat1')">
+                Nat 1s
+                @if (sortField() === 'nat1') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('nat1_20')">
+                Nat 1s / 20
+                @if (sortField() === 'nat1_20') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('nat20')">
+                Nat 20s
+                @if (sortField() === 'nat20') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+              <th class="col-numeric sortable" (click)="toggleSort('nat20_20')">
+                Nat 20s / 20
+                @if (sortField() === 'nat20_20') {
+                  <span class="sort-arrow">{{ sortAscending() ? '▲' : '▼' }}</span>
+                }
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of getStandingsList(); track item.player.id) {
+              <tr>
+                <td class="col-player">
+                  <span class="player-indicator" [style.background-color]="item.player.color"></span>
+                  <strong>
+                    @if (item.player.isDM) { 👑 }
+                    {{ item.player.name }}
+                  </strong>
+                  @if (item.player.characterName) {
+                    <span class="char-name-sub">({{ item.player.characterName }})</span>
+                  }
+                </td>
+                <td class="col-numeric" [class]="getCellClass(item.player.id!, 'rolls', item.stats.totalRolls)">
+                  {{ item.stats.totalRolls }}
+                </td>
+                <td class="col-numeric" [class]="getCellClass(item.player.id!, 'sum', item.stats.sum)">
+                  {{ item.stats.sum }}
+                </td>
+                <td class="col-numeric" [class]="'highlight-avg ' + getCellClass(item.player.id!, 'average', item.stats.average)">
+                  {{ item.stats.average | number:'1.2-2' }}
+                </td>
+                <td class="col-numeric" [class]="getCellClass(item.player.id!, 'lucky', item.stats.luckPercentage)">
+                  {{ item.stats.luckPercentage | percent:'1.1-1' }}
+                </td>
+                <td class="col-numeric luck-col" [class]="getCellClass(item.player.id!, 'luckFactor', item.stats.luckAmount)">
+                  {{ item.stats.luckAmount | number:'1.3-3' }}
+                </td>
+                <td class="col-numeric crit-fail-text" [class]="getCellClass(item.player.id!, 'nat1', item.stats.nat1Count)">
+                  {{ item.stats.nat1Count }}
+                </td>
+                <td class="col-numeric text-muted" [class]="getCellClass(item.player.id!, 'nat1_20', item.stats.avgNat1sPer20)">
+                  {{ item.stats.avgNat1sPer20 | number:'1.2-2' }}
+                </td>
+                <td class="col-numeric crit-success-text" [class]="getCellClass(item.player.id!, 'nat20', item.stats.nat20Count)">
+                  {{ item.stats.nat20Count }}
+                </td>
+                <td class="col-numeric text-muted" [class]="getCellClass(item.player.id!, 'nat20_20', item.stats.avgNat20sPer20)">
+                  {{ item.stats.avgNat20sPer20 | number:'1.2-2' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <p>No roll statistics available. Select a session with recorded data to view analytics.</p>
+    </div>
+  }
+
+</div>

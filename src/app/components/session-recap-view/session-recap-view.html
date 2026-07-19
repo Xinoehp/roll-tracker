@@ -1,0 +1,129 @@
+<div class="recap-card-container">
+  <!-- Card Header -->
+  <div class="recap-card-header">
+    <span class="campaign-tag">{{ campaignName() }}</span>
+    <h2>{{ sessionName() }}</h2>
+    <span class="date-badge">{{ sessionDate() }}</span>
+  </div>
+
+  <!-- Narrative Recap Box -->
+  @if (recapText()) {
+  <div class="recap-narrative-box">
+    <span class="quote-icon-top">“</span>
+    <div class="recap-narrative-text">{{ recapText() }}</div>
+    <span class="quote-icon-bottom">”</span>
+  </div>
+  }
+
+  <!-- Standings Sheet Section -->
+  <div class="recap-table-section">
+    <h3>📊 Session Standings</h3>
+
+    <div class="table-container">
+      <table class="recap-standings-table">
+        <thead>
+          <tr>
+            <th (click)="toggleSort('name')">
+              Player
+              @if (sortBy() === 'name') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('character')">
+              Character
+              @if (sortBy() === 'character') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('rolls')" class="num-col">
+              Rolls
+              @if (sortBy() === 'rolls') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('sum')" class="num-col">
+              Sum
+              @if (sortBy() === 'sum') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('average')" class="num-col">
+              Avg
+              @if (sortBy() === 'average') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('luckPct')" class="num-col">
+              Luck %
+              @if (sortBy() === 'luckPct') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('luckAmt')" class="num-col">
+              Luck Factor
+              @if (sortBy() === 'luckAmt') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('nat1')" class="num-col">
+              Nat 1s
+              @if (sortBy() === 'nat1') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+            <th (click)="toggleSort('nat20')" class="num-col">
+              Nat 20s
+              @if (sortBy() === 'nat20') {
+              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
+              }
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (player of sortedPlayers(); track $index; let idx = $index) {
+          <tr [class.dm-row]="player.isDM">
+            <td>
+              <div class="player-cell">
+                <span class="player-dot" [style.background-color]="getPlayerColor(idx)"></span>
+                <span class="player-name-text">
+                  @if (player.isDM) { 👑 }
+                  {{ player.playerName }}
+                </span>
+              </div>
+            </td>
+            <td class="char-cell">{{ player.characterName || '-' }}</td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'rolls') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'rolls') === 'worst'">
+              {{ player.stats[0] }}
+            </td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'sum') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'sum') === 'worst'">
+              {{ player.stats[1] }}
+            </td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'average') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'average') === 'worst'">
+              {{ player.stats[0] > 0 ? player.stats[2].toFixed(2) : '-' }}
+            </td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'luckPct') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'luckPct') === 'worst'">
+              {{ player.stats[0] > 0 ? (player.stats[3] * 100).toFixed(0) + '%' : '-' }}
+            </td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'luckAmt') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'luckAmt') === 'worst'">
+              {{ player.stats[0] > 0 ? (player.stats[4] >= 0 ? '+' : '') + player.stats[4].toFixed(3) : '-' }}
+            </td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'nat1') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'nat1') === 'worst'">
+              {{ player.stats[5] }}
+            </td>
+            <td class="num-col" [class.best-cell]="getCellHighlight(player, 'nat20') === 'best'"
+              [class.worst-cell]="getCellHighlight(player, 'nat20') === 'worst'">
+              {{ player.stats[6] }}
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

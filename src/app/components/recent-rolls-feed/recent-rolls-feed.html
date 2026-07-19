@@ -1,0 +1,106 @@
+<div class="log-container">
+  
+  <div class="log-header">
+    <h2>Session Roll Logs</h2>
+    <p class="subtitle">Complete chronological history of rolls for the active session</p>
+  </div>
+
+  @if (state.activeSession()) {
+    <!-- Filters Sidebar/Bar -->
+    <div class="filters-panel">
+      <!-- Player Filter Row -->
+      <div class="filter-section">
+        <span class="filter-label">Filter by Player:</span>
+        <div class="filter-pills">
+          <button 
+            class="pill-btn" 
+            [class.active]="selectedCharacterId() === null"
+            (click)="setPlayerFilter(null)"
+          >
+            All Players
+          </button>
+          @for (player of state.activeCharacters(); track player.id) {
+            <button 
+              class="pill-btn" 
+              [class.active]="selectedCharacterId() === player.id"
+              [style.--player-pill-color]="player.color"
+              (click)="setPlayerFilter(player.id!)"
+            >
+              {{ player.playerName }}
+              @if (player.name && player.name !== player.playerName) {
+                ({{ player.name }})
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Roll Type Filter Row -->
+      <div class="filter-section">
+        <span class="filter-label">Filter by Value:</span>
+        <div class="filter-pills">
+          <button 
+            class="pill-btn" 
+            [class.active]="rollFilterType() === 'all'"
+            (click)="setRollFilter('all')"
+          >
+            All Rolls
+          </button>
+          <button 
+            class="pill-btn crit-success-pill" 
+            [class.active]="rollFilterType() === 'crit-success'"
+            (click)="setRollFilter('crit-success')"
+          >
+            Natural 20s
+          </button>
+          <button 
+            class="pill-btn crit-fail-pill" 
+            [class.active]="rollFilterType() === 'crit-fail'"
+            (click)="setRollFilter('crit-fail')"
+          >
+            Natural 1s
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rolls Table/List -->
+    <div class="log-list-panel">
+      <div class="list-meta">
+        <span>Showing <strong>{{ filteredRolls().length }}</strong> of {{ state.rolls().length }} rolls</span>
+      </div>
+
+      <div class="log-items-container">
+        @if (filteredRolls().length === 0) {
+          <div class="empty-log-state">
+            <p>No rolls match the selected filters.</p>
+          </div>
+        } @else {
+          @for (roll of filteredRolls(); track roll.id) {
+            <div class="log-item" [style.--player-color-accent]="getPlayerColor(roll.characterId)">
+              <div class="log-item-left">
+                <span class="log-dot" [style.background-color]="getPlayerColor(roll.characterId)"></span>
+                <span class="log-player-name">{{ getPlayerName(roll.characterId) }}</span>
+                <span class="log-time">{{ roll.createdAt | date:'shortTime' }}</span>
+              </div>
+              <div class="log-item-right">
+                <span class="log-badge" 
+                      [class.crit-fail]="roll.value === 1" 
+                      [class.crit-success]="roll.value === 20">
+                  {{ roll.value }}
+                </span>
+                <button class="delete-btn" (click)="deleteRoll(roll.id!)" title="Delete Roll">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <p>Please select an active session to view logs.</p>
+    </div>
+  }
+</div>
