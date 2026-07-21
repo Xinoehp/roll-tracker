@@ -605,8 +605,10 @@ export class App implements OnInit {
         .map(h => h.emoji);
 
       if (activeTexts.length > 0) {
-        const title = char.isDM ? `${char.playerName}` : `${char.playerName}`;
-        lines.push(`${activeEmoji} ${title}:`);
+        const name = char.name || char.playerName;
+        const topHighlight = pAvailable.find(h => pSelected.includes(h.id));
+        const titleSuffix = topHighlight?.title ? ` ${topHighlight.title}` : '';
+        lines.push(`${activeEmoji} ${name}${titleSuffix}:`);
         lines.push(`${activeTexts.join(' ')}\n`);
       }
     }

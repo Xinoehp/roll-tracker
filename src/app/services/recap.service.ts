@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HIGHLIGHT_RULES } from './highlight-rules';
+import { HIGHLIGHT_TITLES, HIGHLIGHT_TEXT_VARIANTS, pickRandom } from './highlight-flavour';
 
 export interface StatHighlight {
   id: string;
   emoji: string;
+  title?: string;
   label: string;
   textTemplate: string;
   improbabilityScore: number; // 0 to 1
@@ -42,15 +44,23 @@ export class RecapService {
     sessionContext: SessionContext
   ): StatHighlight[] {
     const N = rolls.length;
-    const displayName = characterName ? characterName : playerName;
+    let displayName = characterName ? characterName : playerName;
+    if (displayName === 'Dungeon Master') {
+      displayName = 'Our Dungeon Master';
+    }
 
     // Handle zero rolls as a special case
     if (N === 0) {
+      const zeroTitles = HIGHLIGHT_TITLES['zero_rolls'];
+      const zeroVariants = HIGHLIGHT_TEXT_VARIANTS['zero_rolls'];
       return [{
         id: 'zero_rolls',
         emoji: '🤫',
+        title: zeroTitles ? pickRandom(zeroTitles) : 'The Silent Observer',
         label: 'The Silent (0 rolls)',
-        textTemplate: `${displayName} was a quiet observer this time, recording 0 rolls. Perhaps staying quiet was a wise choice—silence can sometimes be golden!`,
+        textTemplate: zeroVariants
+          ? pickRandom(zeroVariants)([], {} as SessionContext, playerName, displayName)
+          : `${displayName} was a quiet observer this time, recording 0 rolls. Perhaps staying quiet was a wise choice—silence can sometimes be golden!`,
         improbabilityScore: 0.8,
       }];
     }
@@ -58,13 +68,19 @@ export class RecapService {
     // Run each rule in the registry, collect valid highlights
     const highlights: StatHighlight[] = HIGHLIGHT_RULES
       .filter(rule => rule.isValid(rolls, sessionContext, playerName))
-      .map(rule => ({
-        id: rule.id,
-        emoji: rule.emoji,
-        label: rule.label(rolls, sessionContext, playerName) || rule.id,
-        textTemplate: rule.generateText(rolls, sessionContext, playerName, displayName),
-        improbabilityScore: rule.improbabilityScore(rolls, sessionContext),
-      }));
+      .map(rule => {
+        const titles = HIGHLIGHT_TITLES[rule.id];
+        const variants = HIGHLIGHT_TEXT_VARIANTS[rule.id];
+        const textFn = variants ? pickRandom(variants) : rule.generateText;
+        return {
+          id: rule.id,
+          emoji: rule.emoji,
+          title: titles ? pickRandom(titles) : undefined,
+          label: rule.label(rolls, sessionContext, playerName) || rule.id,
+          textTemplate: textFn(rolls, sessionContext, playerName, displayName),
+          improbabilityScore: rule.improbabilityScore(rolls, sessionContext),
+        };
+      });
 
     // Sort by improbabilityScore descending (most impressive first)
     highlights.sort((a, b) => b.improbabilityScore - a.improbabilityScore);

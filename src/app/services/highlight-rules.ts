@@ -17,27 +17,27 @@ export interface HighlightRule {
 
 // ─── Utility helpers ───────────────────────────────────────────────────────────
 
-function stdDev(values: number[]): number {
+export function stdDev(values: number[]): number {
   if (values.length === 0) return 0;
   const avg = values.reduce((s, v) => s + v, 0) / values.length;
   const sqDiffs = values.map(v => (v - avg) ** 2);
   return Math.sqrt(sqDiffs.reduce((s, d) => s + d, 0) / values.length);
 }
 
-function median(values: number[]): number {
+export function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-function formatList(items: any[]): string {
+export function formatList(items: any[]): string {
   if (items.length === 0) return '';
   if (items.length === 1) return String(items[0]);
   if (items.length === 2) return `${items[0]} or ${items[1]}`;
   return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
 }
 
-function longestConsecutiveRun(rolls: number[], predicate: (r: number) => boolean): number {
+export function longestConsecutiveRun(rolls: number[], predicate: (r: number) => boolean): number {
   let max = 0, cur = 0;
   for (const r of rolls) {
     if (predicate(r)) { cur++; max = Math.max(max, cur); }
@@ -46,7 +46,7 @@ function longestConsecutiveRun(rolls: number[], predicate: (r: number) => boolea
   return max;
 }
 
-function longestAlternatingRun(rolls: number[]): number {
+export function longestAlternatingRun(rolls: number[]): number {
   // Alternating between high (>=15) and low (<=5)
   let count = 0, max = 0;
   for (let i = 0; i < rolls.length; i++) {
@@ -70,7 +70,7 @@ function longestAlternatingRun(rolls: number[]): number {
   return Math.max(max, count);
 }
 
-function longestDuplicateRun(rolls: number[]): { value: number; length: number } {
+export function longestDuplicateRun(rolls: number[]): { value: number; length: number } {
   let best = { value: 0, length: 0 };
   let cur = { value: 0, length: 0 };
   for (const r of rolls) {
@@ -81,7 +81,7 @@ function longestDuplicateRun(rolls: number[]): { value: number; length: number }
   return best;
 }
 
-function longestStraight(rolls: number[]): number {
+export function longestStraight(rolls: number[]): number {
   let max = 1, cur = 1;
   for (let i = 1; i < rolls.length; i++) {
     const diff = rolls[i] - rolls[i - 1];
@@ -101,7 +101,7 @@ function longestStraight(rolls: number[]): number {
   return max;
 }
 
-function luckPct(rolls: number[]): number {
+export function luckPct(rolls: number[]): number {
   return rolls.filter(r => r >= 11).length / rolls.length;
 }
 
@@ -307,13 +307,13 @@ export const HIGHLIGHT_RULES: HighlightRule[] = [
     isValid: (rolls) => longestConsecutiveRun(rolls, r => r <= 5) >= 3,
   },
 
-  // ── Bipolar Roller ──
+  // ── Yo-Yo Roller ──
   {
     id: 'bipolar_roller',
     emoji: '🎭',
     label: (rolls) => {
       const run = longestAlternatingRun(rolls);
-      return `Bipolar Roller! ${run} alternating high/low rolls`;
+      return `Yo-Yo Roller! ${run} alternating high/low rolls`;
     },
     generateText: (rolls, _ctx, _pn, dn) => {
       const run = longestAlternatingRun(rolls);
