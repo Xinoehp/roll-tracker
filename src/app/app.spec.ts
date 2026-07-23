@@ -7,6 +7,7 @@ import { StatsService } from './services/stats.service';
 import { SessionStateService } from './services/session-state.service';
 import { RecapService } from './services/recap.service';
 import { SettingsService } from './services/settings.service';
+import { formatRollPosition, formatProbabilityPct } from './services/highlight-rules';
 
 // Helper to seed a small mock database for stats validation
 async function seedMockDatabase(db: DatabaseService) {
@@ -215,6 +216,18 @@ describe('App', () => {
     settingsService.setKeyboardShortcuts(false);
     expect(settingsService.keyboardShortcutsEnabled()).toBe(false);
     expect(localStorage.getItem('keyboard_shortcuts_enabled')).toBe('false');
+  });
+
+  it('should include formatted session date in formatRollPosition when rollDates is provided', () => {
+    const posWithDate = formatRollPosition(5, 10, ['2026-04-24', '2026-04-24', '2026-04-24', '2026-04-24', '2026-04-24', '2026-04-24']);
+    expect(posWithDate).toContain('on 24/04/2026');
+  });
+
+  it('should format probability numbers to clean percentage strings', () => {
+    expect(formatProbabilityPct(0.05)).toBe('5.0%');
+    expect(formatProbabilityPct(0.0081)).toBe('0.81%');
+    expect(formatProbabilityPct(0.0001)).toBe('0.01%');
+    expect(formatProbabilityPct(0.000005)).toBe('<0.01%');
   });
 });
 

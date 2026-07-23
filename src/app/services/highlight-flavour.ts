@@ -1,8 +1,11 @@
 import type { SessionContext } from './recap.service';
 import {
   stdDev, median, formatList,
-  longestConsecutiveRun, longestAlternatingRun,
-  longestDuplicateRun, longestStraight, luckPct,
+  longestConsecutiveRun, longestConsecutiveRunDetails,
+  longestAlternatingRun, longestAlternatingRunDetails,
+  longestDuplicateRun, longestDuplicateRunDetails,
+  longestStraight, longestStraightDetails,
+  luckPct, formatRollPosition, formatRollIndices, formatDateStr,
 } from './highlight-rules';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -12,6 +15,7 @@ export type TextGenerator = (
   ctx: SessionContext,
   playerName: string,
   displayName: string,
+  rollDates?: string[],
 ) => string;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -167,6 +171,34 @@ export const HIGHLIGHT_TITLES: Record<string, string[]> = {
     'The Equaliser',
     'Statistical Perfection',
   ],
+  fortune_blessed: [
+    "Lady Luck's Favourite",
+    'Fortune Blessed',
+    'Born Lucky',
+    'The Golden One',
+    "Fate's Darling",
+  ],
+  fortune_cursed: [
+    'Fortune Cursed',
+    'Luck Drought',
+    'The Unlucky',
+    "Fate's Fool",
+    'Bad Luck Charm',
+  ],
+  nat20_magnet: [
+    'Nat 20 Magnet',
+    'Critical Machine',
+    'The Lucky Strike',
+    'Twenty Collector',
+    'Crit Magnet',
+  ],
+  nat1_magnet: [
+    'Nat 1 Magnet',
+    'Fumble Magnet',
+    'The Unfortunate',
+    'Failure Collector',
+    'Crit Fail Generator',
+  ],
   zero_rolls: [
     'The Silent Observer',
     'Ghost at the Table',
@@ -256,19 +288,19 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
 
   crit_master_both: [
     (rolls, _ctx, _pn, dn) => {
-      const n20 = rolls.filter(r => r === 20).length;
-      const n1 = rolls.filter(r => r === 1).length;
-      return `${dn} lived on the absolute edge, scoring ${n20} natural 20s and ${n1} critical failures! A wild, unpredictable rollercoaster of fate!`;
+      const n20 = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      const n1 = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      return `${dn} lived on the absolute edge, scoring ${n20.length} natural 20s (${formatRollIndices(n20)}) and ${n1.length} critical failures (${formatRollIndices(n1)})! A wild, unpredictable rollercoaster of fate!`;
     },
     (rolls, _ctx, _pn, dn) => {
-      const n20 = rolls.filter(r => r === 20).length;
-      const n1 = rolls.filter(r => r === 1).length;
-      return `${dn} experienced the full spectrum of fortune — ${n20} glorious nat 20s clashed against ${n1} devastating nat 1s. Never a dull moment!`;
+      const n20 = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      const n1 = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      return `${dn} experienced the full spectrum of fortune — ${n20.length} glorious nat 20s (${formatRollIndices(n20)}) clashed against ${n1.length} devastating nat 1s (${formatRollIndices(n1)}). Never a dull moment!`;
     },
     (rolls, _ctx, _pn, dn) => {
-      const n20 = rolls.filter(r => r === 20).length;
-      const n1 = rolls.filter(r => r === 1).length;
-      return `With ${n20} natural 20s and ${n1} critical fumbles, ${dn} proved that their dice have no concept of moderation. Peak highs and crushing lows!`;
+      const n20 = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      const n1 = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      return `With ${n20.length} natural 20s (${formatRollIndices(n20)}) and ${n1.length} critical fumbles (${formatRollIndices(n1)}), ${dn} proved that their dice have no concept of moderation. Peak highs and crushing lows!`;
     },
   ],
 
@@ -276,33 +308,33 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
 
   crit_king_20s: [
     (rolls, _ctx, _pn, dn) => {
-      const n20 = rolls.filter(r => r === 20).length;
-      return `${dn} was on fire, scoring ${n20} natural 20s and avoiding critical failures entirely! Pure rolling excellence.`;
+      const n20 = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      return `${dn} was on fire, scoring ${n20.length} natural 20s (${formatRollIndices(n20)}) and avoiding critical failures entirely! Pure rolling excellence.`;
     },
     (rolls, _ctx, _pn, dn) => {
-      const n20 = rolls.filter(r => r === 20).length;
-      return `${dn} rolled with impunity — ${n20} natural 20s and not a single nat 1 in sight! The dice were clearly enchanted.`;
+      const n20 = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      return `${dn} rolled with impunity — ${n20.length} natural 20s (${formatRollIndices(n20)}) and not a single nat 1 in sight! The dice were clearly enchanted.`;
     },
     (rolls, _ctx, _pn, dn) => {
-      const n20 = rolls.filter(r => r === 20).length;
-      return `Flawless execution from ${dn}, who landed ${n20} critical successes while dodging every possible fumble. Is this what perfection looks like?`;
+      const n20 = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      return `Flawless execution from ${dn}, who landed ${n20.length} critical successes (${formatRollIndices(n20)}) while dodging every possible fumble. Is this what perfection looks like?`;
     },
   ],
 
   // ── Crit Fumbles (nat 1s only) ────────────────────────────────────────────────
 
   crit_fumble_1s: [
-    (rolls, _ctx, _pn, dn) => {
-      const n1 = rolls.filter(r => r === 1).length;
-      return `${dn} faced tough odds, rolling ${n1} critical failures and failing to land a single natural 20. The dice gods were testing their resolve!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n1Indices = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      return `${dn} faced tough odds, rolling ${n1Indices.length} critical failures (${formatRollIndices(n1Indices, rollDates)}) and failing to land a single natural 20. The dice gods were testing their resolve!`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const n1 = rolls.filter(r => r === 1).length;
-      return `${dn} weathered a storm of bad luck — ${n1} nat 1s and zero nat 20s. The dice gods clearly had other plans for them this session.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n1Indices = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      return `${dn} weathered a storm of bad luck — ${n1Indices.length} nat 1s (${formatRollIndices(n1Indices, rollDates)}) and zero nat 20s. The dice gods clearly had other plans for them this session.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const n1 = rolls.filter(r => r === 1).length;
-      return `It was a rough night at the table for ${dn}: ${n1} critical fumbles and not one natural 20 to soften the blow. True grit in the face of terrible odds!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n1Indices = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      return `It was a rough night at the table for ${dn}: ${n1Indices.length} critical fumbles (${formatRollIndices(n1Indices, rollDates)}) and not one natural 20 to soften the blow. True grit in the face of terrible odds!`;
     },
   ],
 
@@ -355,51 +387,60 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
   // ── Hot Streak ────────────────────────────────────────────────────────────────
 
   hot_streak: [
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestConsecutiveRun(rolls, r => r >= 15);
-      return `${dn} hit an incredible hot streak, landing ${run} consecutive rolls of 15 or higher! When the dice are on fire, you don't stop rolling!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestConsecutiveRunDetails(rolls, r => r >= 15);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn} hit an incredible hot streak ${pos}, landing ${detail.max} consecutive rolls of 15+ (${detail.values.join(', ')})! When the dice are on fire, you don't stop rolling!`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestConsecutiveRun(rolls, r => r >= 15);
-      return `${dn} caught fire with ${run} straight rolls of 15+! That's the kind of streak that changes the course of entire campaigns.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestConsecutiveRunDetails(rolls, r => r >= 15);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn} caught fire ${pos} with ${detail.max} straight rolls of 15+ (${detail.values.join(', ')})! That's the kind of streak that changes the course of entire campaigns.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestConsecutiveRun(rolls, r => r >= 15);
-      return `The table watched in awe as ${dn} strung together ${run} consecutive high rolls (15 or above). When you're hot, you're hot!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestConsecutiveRunDetails(rolls, r => r >= 15);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `The table watched in awe as ${dn} strung together ${detail.max} consecutive high rolls (${detail.values.join(', ')}) ${pos}. When you're hot, you're hot!`;
     },
   ],
 
   // ── Cold Snap ─────────────────────────────────────────────────────────────────
 
   cold_snap: [
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestConsecutiveRun(rolls, r => r <= 5);
-      return `${dn} endured a brutal cold snap, suffering ${run} consecutive rolls of 5 or lower. Sometimes fate just isn't on your side!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestConsecutiveRunDetails(rolls, r => r <= 5);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn} endured a brutal cold snap ${pos}, suffering ${detail.max} consecutive rolls of 5 or lower (${detail.values.join(', ')})! Sometimes fate just isn't on your side.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestConsecutiveRun(rolls, r => r <= 5);
-      return `${dn} hit a devastating skid — ${run} rolls in a row at 5 or below. Even the most seasoned adventurers have rough patches.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestConsecutiveRunDetails(rolls, r => r <= 5);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn} hit a devastating skid ${pos} — ${detail.max} rolls in a row at 5 or below (${detail.values.join(', ')}). Even the most seasoned adventurers have rough patches.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestConsecutiveRun(rolls, r => r <= 5);
-      return `A merciless cold streak gripped ${dn}, who rolled 5 or lower ${run} times consecutively. The dice tray felt more like an ice rink.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestConsecutiveRunDetails(rolls, r => r <= 5);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `A merciless cold streak gripped ${dn} ${pos}, who rolled 5 or lower ${detail.max} times consecutively (${detail.values.join(', ')}). The dice tray felt more like an ice rink.`;
     },
   ],
 
   // ── Yo-Yo Roller ────────────────────────────────────────────────────────────────────────────
 
   bipolar_roller: [
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestAlternatingRun(rolls);
-      return `${dn} was the ultimate wildcard, swinging between extremes with ${run} alternating high (≥15) and low (≤5) rolls! A truly chaotic energy at the table.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestAlternatingRunDetails(rolls);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn} was the ultimate wildcard, swinging between extremes ${pos} with ${detail.max} alternating high/low rolls (${detail.values.join(' → ')})! A truly chaotic energy at the table.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestAlternatingRun(rolls);
-      return `${dn}'s dice couldn't make up their mind — ${run} rolls alternating between brilliant highs and crushing lows. A thrilling but nauseating ride!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestAlternatingRunDetails(rolls);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn}'s dice couldn't make up their mind ${pos} — ${detail.max} rolls alternating between brilliant highs and crushing lows (${detail.values.join(' → ')}). A thrilling but nauseating ride!`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestAlternatingRun(rolls);
-      return `Extreme after extreme! ${dn} ping-ponged between rolls of 15+ and 5 or less a total of ${run} times in a row. Utterly unpredictable!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestAlternatingRunDetails(rolls);
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `Extreme after extreme! ${dn} ping-ponged between rolls of 15+ and 5 or less a total of ${detail.max} times in a row (${detail.values.join(' → ')}) ${pos}. Utterly unpredictable!`;
     },
   ],
 
@@ -481,54 +522,78 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
   // ── Broken Record ─────────────────────────────────────────────────────────────
 
   broken_record: [
-    (rolls, _ctx, _pn, dn) => {
-      const dup = longestDuplicateRun(rolls);
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const dup = longestDuplicateRunDetails(rolls);
       const odds = Math.round(Math.pow(20, dup.length - 1));
-      return `${dn} got stuck in a loop, rolling a ${dup.value} an astonishing ${dup.length} times in a row! The odds of this for any specific number are roughly 1 in ${odds.toLocaleString()}!`;
+      const dateStr = formatDateStr(rollDates?.[dup.startIndex]);
+      const dateText = dateStr ? ` on ${dateStr}` : '';
+      const range = `rolls #${dup.startIndex + 1}–#${dup.startIndex + dup.length}${dateText}`;
+      return `${dn} got stuck in a loop, rolling a ${dup.value} an astonishing ${dup.length} times in a row (${range})! The odds of this for any specific number are roughly 1 in ${odds.toLocaleString()}!`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const dup = longestDuplicateRun(rolls);
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const dup = longestDuplicateRunDetails(rolls);
       const odds = Math.round(Math.pow(20, dup.length - 1));
-      return `${dn} rolled a ${dup.value} not once, not twice, but ${dup.length} times consecutively! The mathematical odds? A staggering 1 in ${odds.toLocaleString()}!`;
+      const dateStr = formatDateStr(rollDates?.[dup.startIndex]);
+      const dateText = dateStr ? ` on ${dateStr}` : '';
+      const range = `rolls #${dup.startIndex + 1}–#${dup.startIndex + dup.length}${dateText}`;
+      return `${dn} rolled a ${dup.value} not once, not twice, but ${dup.length} times consecutively (${range})! The mathematical odds? A staggering 1 in ${odds.toLocaleString()}!`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const dup = longestDuplicateRun(rolls);
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const dup = longestDuplicateRunDetails(rolls);
       const odds = Math.round(Math.pow(20, dup.length - 1));
-      return `The dice had one answer for ${dn}: ${dup.value}. They rolled it ${dup.length} times straight, an event with odds of roughly 1 in ${odds.toLocaleString()}. Glitch in the matrix?`;
+      const dateStr = formatDateStr(rollDates?.[dup.startIndex]);
+      const dateText = dateStr ? ` on ${dateStr}` : '';
+      const range = `rolls #${dup.startIndex + 1}–#${dup.startIndex + dup.length}${dateText}`;
+      return `The dice had one answer for ${dn}: ${dup.value}. They rolled it ${dup.length} times straight (${range}), an event with odds of roughly 1 in ${odds.toLocaleString()}. Glitch in the matrix?`;
     },
   ],
 
   // ── Perfect Sequence ──────────────────────────────────────────────────────────
 
   perfect_sequence: [
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestStraight(rolls);
-      const odds = Math.round(Math.pow(20, run - 1) / Math.pow(2, run - 1));
-      return `${dn} defied probability by rolling a perfect ${run}-number straight sequence! The mathematical odds of landing this are approximately 1 in ${odds.toLocaleString()}!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestStraightDetails(rolls);
+      const odds = Math.round(Math.pow(20, detail.max - 1) / Math.pow(2, detail.max - 1));
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn} defied probability by rolling a perfect ${detail.max}-number straight (${detail.values.join(' → ')}) ${pos}! The mathematical odds of landing this are approximately 1 in ${odds.toLocaleString()}!`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestStraight(rolls);
-      const odds = Math.round(Math.pow(20, run - 1) / Math.pow(2, run - 1));
-      return `Like counting steps on a staircase, ${dn} rolled a perfect ${run}-number sequence! The odds of such a clean run are roughly 1 in ${odds.toLocaleString()}.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestStraightDetails(rolls);
+      const odds = Math.round(Math.pow(20, detail.max - 1) / Math.pow(2, detail.max - 1));
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `Like counting steps on a staircase, ${dn} rolled a perfect ${detail.max}-number sequence (${detail.values.join(' → ')}) ${pos}! The odds of such a clean run are roughly 1 in ${odds.toLocaleString()}.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      const run = longestStraight(rolls);
-      const odds = Math.round(Math.pow(20, run - 1) / Math.pow(2, run - 1));
-      return `${dn}'s dice went in perfect order — a ${run}-roll straight that defies all probability at approximately 1 in ${odds.toLocaleString()} odds. Calculated chaos!`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const detail = longestStraightDetails(rolls);
+      const odds = Math.round(Math.pow(20, detail.max - 1) / Math.pow(2, detail.max - 1));
+      const pos = formatRollPosition(detail.startIndex, rolls.length, rollDates);
+      return `${dn}'s dice went in perfect order ${pos} — a ${detail.max}-roll straight (${detail.values.join(' → ')}) that defies all probability at approximately 1 in ${odds.toLocaleString()} odds. Calculated chaos!`;
     },
   ],
 
   // ── Bookends ──────────────────────────────────────────────────────────────────
 
   bookends: [
-    (rolls, _ctx, _pn, dn) => {
-      return `${dn} rolled a perfect bookend, starting and ending the session with the same roll: ${rolls[0]}! A poetic symmetry that the dice gods clearly orchestrated.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const dStart = formatDateStr(rollDates?.[0]);
+      const dEnd = formatDateStr(rollDates?.[rolls.length - 1]);
+      const startInfo = dStart ? `on roll #1 on ${dStart}` : `on roll #1`;
+      const endInfo = dEnd ? `on roll #${rolls.length} on ${dEnd}` : `on roll #${rolls.length}`;
+      return `${dn} rolled a perfect bookend, starting and ending the session with the exact same roll: ${rolls[0]} (opening ${startInfo} and closing ${endInfo})! A poetic symmetry that the dice gods clearly orchestrated.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      return `${dn} opened with a ${rolls[0]} and closed with a ${rolls[0]} — a satisfying symmetry that bookends the session perfectly.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const dStart = formatDateStr(rollDates?.[0]);
+      const dEnd = formatDateStr(rollDates?.[rolls.length - 1]);
+      const startInfo = dStart ? `on roll #1 on ${dStart}` : `on roll #1`;
+      const endInfo = dEnd ? `on roll #${rolls.length} on ${dEnd}` : `on roll #${rolls.length}`;
+      return `${dn} opened with a ${rolls[0]} ${startInfo} and closed with a ${rolls[0]} ${endInfo} — a satisfying symmetry that bookends the session perfectly.`;
     },
-    (rolls, _ctx, _pn, dn) => {
-      return `First roll: ${rolls[0]}. Last roll: ${rolls[0]}. ${dn}'s session came full circle in the most poetic way possible.`;
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const dStart = formatDateStr(rollDates?.[0]);
+      const dEnd = formatDateStr(rollDates?.[rolls.length - 1]);
+      const startInfo = dStart ? ` (roll #1 on ${dStart})` : ` (roll #1)`;
+      const endInfo = dEnd ? ` (roll #${rolls.length} on ${dEnd})` : ` (roll #${rolls.length})`;
+      return `First roll${startInfo}: ${rolls[0]}. Last roll${endInfo}: ${rolls[rolls.length - 1]}. ${dn}'s session came full circle in the most poetic way possible.`;
     },
   ],
 
@@ -563,6 +628,82 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
     (rolls, _ctx, _pn, dn) => {
       const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
       return `${dn} rolled like a textbook — an average of ${avg.toFixed(2)} across ${rolls.length} rolls, practically kissing the mathematical expectation of 10.5. Perfectly balanced, as all things should be.`;
+    },
+  ],
+
+  // ── Zero Rolls (special case) ─────────────────────────────────────────────────
+
+  // ── Fortune Blessed ───────────────────────────────────────────────────────────
+
+  fortune_blessed: [
+    (rolls, _ctx, _pn, dn) => {
+      const luck = (luckPct(rolls) * 100).toFixed(0);
+      return `${dn} was blessed by fortune with ${luck}% of their rolls landing at 11 or above! Lady Luck was clearly in their corner.`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const luck = (luckPct(rolls) * 100).toFixed(0);
+      return `A staggering ${luck}% of ${dn}'s rolls came in at 11 or higher — the kind of session that makes other players jealous!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const luck = (luckPct(rolls) * 100).toFixed(0);
+      return `${dn} rode a wave of pure luck this session, with ${luck}% of all rolls beating the midpoint. The dice were on their side!`;
+    },
+  ],
+
+  // ── Fortune Cursed ────────────────────────────────────────────────────────────
+
+  fortune_cursed: [
+    (rolls, _ctx, _pn, dn) => {
+      const luck = (luckPct(rolls) * 100).toFixed(0);
+      return `${dn} was cursed by the dice gods — only ${luck}% of their rolls hit 11 or above. A truly unlucky session!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const luck = (luckPct(rolls) * 100).toFixed(0);
+      return `With just ${luck}% of rolls reaching 11+, ${dn} drew the short straw this session. Even the bravest adventurers have off days.`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const luck = (luckPct(rolls) * 100).toFixed(0);
+      return `The odds were stacked against ${dn}, landing above 10 only ${luck}% of the time. The dice tray was a hostile place tonight.`;
+    },
+  ],
+
+  // ── Nat 20 Magnet ─────────────────────────────────────────────────────────────
+
+  nat20_magnet: [
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n20Indices = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      const rate = (n20Indices.length / rolls.length * 20).toFixed(1);
+      return `${dn} pulled nat 20s at an extraordinary rate of ${rate} per 20 rolls (expected: 1.0), landing ${n20Indices.length} total (${formatRollIndices(n20Indices, rollDates)}) across ${rolls.length} rolls! Are those dice loaded?`;
+    },
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n20Indices = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      const rate = (n20Indices.length / rolls.length * 20).toFixed(1);
+      return `With ${n20Indices.length} natural 20s (${formatRollIndices(n20Indices, rollDates)}) in ${rolls.length} rolls (a rate of ${rate} per 20), ${dn} rolled critical successes like it was going out of style!`;
+    },
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n20Indices = rolls.map((r, i) => r === 20 ? i : -1).filter(i => i >= 0);
+      const rate = (n20Indices.length / rolls.length * 20).toFixed(1);
+      return `${dn}'s d20 had a serious bias toward the top — ${n20Indices.length} nat 20s (${formatRollIndices(n20Indices, rollDates)}) at a rate of ${rate} per 20 rolls, more than double what probability predicts!`;
+    },
+  ],
+
+  // ── Nat 1 Magnet ──────────────────────────────────────────────────────────────
+
+  nat1_magnet: [
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n1Indices = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      const rate = (n1Indices.length / rolls.length * 20).toFixed(1);
+      return `${dn} attracted nat 1s like a magnet — ${rate} per 20 rolls (expected: 1.0), with ${n1Indices.length} critical failures (${formatRollIndices(n1Indices, rollDates)}) across ${rolls.length} rolls! The dice clearly had a grudge.`;
+    },
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n1Indices = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      const rate = (n1Indices.length / rolls.length * 20).toFixed(1);
+      return `${n1Indices.length} nat 1s (${formatRollIndices(n1Indices, rollDates)}) in ${rolls.length} rolls gave ${dn} a failure rate of ${rate} per 20 — well above the expected 1.0. The dice gods were testing their patience!`;
+    },
+    (rolls, _ctx, _pn, dn, rollDates) => {
+      const n1Indices = rolls.map((r, i) => r === 1 ? i : -1).filter(i => i >= 0);
+      const rate = (n1Indices.length / rolls.length * 20).toFixed(1);
+      return `${dn} couldn't escape the dreaded nat 1, rolling it ${n1Indices.length} times (${formatRollIndices(n1Indices, rollDates)}) at a rate of ${rate} per 20 rolls. That's more than double what the math says should happen!`;
     },
   ],
 

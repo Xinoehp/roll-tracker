@@ -430,10 +430,22 @@ export class App implements OnInit {
 
     // Fetch rolls per character in the selected scope
     const rollsMap: Record<number, number[]> = {};
+    const rollDatesMap: Record<number, string[]> = {};
     const sessionId = type === 'session' ? this.state.activeSession()?.id : undefined;
+
+    // Pre-fetch session dates if generating a campaign-wide recap
+    const sessionDateMap = new Map<number, string>();
+    if (type === 'campaign') {
+      const campaignId = this.state.activeCampaign()?.id;
+      if (campaignId) {
+        const campaignSessions = await this.db.sessions.where('campaignId').equals(campaignId).toArray();
+        campaignSessions.forEach(s => sessionDateMap.set(s.id!, s.date));
+      }
+    }
 
     for (const char of characters) {
       let charRolls: number[] = [];
+      let charRollDates: string[] = [];
       if (type === 'session') {
         if (sessionId) {
           const rawRolls = await this.db.rolls
@@ -446,8 +458,10 @@ export class App implements OnInit {
       } else {
         const rawRolls = await this.db.rolls.where('characterId').equals(char.id!).toArray();
         charRolls = rawRolls.map(r => r.value);
+        charRollDates = rawRolls.map(r => sessionDateMap.get(r.sessionId) || '');
       }
       rollsMap[char.id!] = charRolls;
+      rollDatesMap[char.id!] = charRollDates;
     }
     this.recapCharacterRolls.set(rollsMap);
     this.recapCharactersList.set(characters);
@@ -497,12 +511,14 @@ export class App implements OnInit {
 
     for (const char of characters) {
       const charRolls = rollsMap[char.id!] || [];
+      const charRollDates = rollDatesMap[char.id!];
       const pHighlights = this.recapService.generateHighlights(
         char.playerName || '',
         char.name,
         !!char.isDM,
         charRolls,
-        context
+        context,
+        type === 'campaign' ? charRollDates : undefined
       );
 
       available[char.id!] = pHighlights;

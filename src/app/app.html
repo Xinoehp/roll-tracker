@@ -239,7 +239,7 @@
                       <input type="checkbox" [checked]="(recapSelectedHighlights()[char.id!] || []).includes(h.id)"
                         (change)="toggleRecapHighlight(char.id!, h.id)" />
                       <span class="highlight-emoji">{{ h.emoji }}</span>
-                      <span class="highlight-label-text">{{ h.label }}</span>
+                      <span class="highlight-label-text">{{ h.label }} <small style="opacity: 0.7; font-size: 0.85em">({{ h.formattedPct }})</small></span>
                     </label>
                     }
                     @if ((recapAvailableHighlights()[char.id!] || []).length === 0) {

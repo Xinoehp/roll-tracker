@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HIGHLIGHT_RULES } from './highlight-rules';
+import { HIGHLIGHT_RULES, formatProbabilityPct } from './highlight-rules';
 import { HIGHLIGHT_TITLES, HIGHLIGHT_TEXT_VARIANTS, pickRandom } from './highlight-flavour';
 
 export interface StatHighlight {
@@ -9,6 +9,8 @@ export interface StatHighlight {
   label: string;
   textTemplate: string;
   improbabilityScore: number; // 0 to 1
+  rawProbability: number;     // 0 to 1
+  formattedPct: string;       // e.g. "0.81%"
 }
 
 export interface SessionContext {
@@ -41,7 +43,8 @@ export class RecapService {
     characterName: string,
     isDM: boolean,
     rolls: number[],
-    sessionContext: SessionContext
+    sessionContext: SessionContext,
+    rollDates?: string[]
   ): StatHighlight[] {
     const N = rolls.length;
     let displayName = characterName ? characterName : playerName;
@@ -59,9 +62,11 @@ export class RecapService {
         title: zeroTitles ? pickRandom(zeroTitles) : 'The Silent Observer',
         label: 'The Silent (0 rolls)',
         textTemplate: zeroVariants
-          ? pickRandom(zeroVariants)([], {} as SessionContext, playerName, displayName)
+          ? pickRandom(zeroVariants)([], {} as SessionContext, playerName, displayName, rollDates)
           : `${displayName} was a quiet observer this time, recording 0 rolls. Perhaps staying quiet was a wise choice—silence can sometimes be golden!`,
         improbabilityScore: 0.8,
+        rawProbability: 1.0,
+        formattedPct: '100%',
       }];
     }
 
@@ -72,13 +77,19 @@ export class RecapService {
         const titles = HIGHLIGHT_TITLES[rule.id];
         const variants = HIGHLIGHT_TEXT_VARIANTS[rule.id];
         const textFn = variants ? pickRandom(variants) : rule.generateText;
+        const prob = rule.rawProbability ? rule.rawProbability(rolls, sessionContext) : 0.5;
+        const formattedPct = formatProbabilityPct(prob);
+        const baseText = textFn(rolls, sessionContext, playerName, displayName, rollDates);
+        
         return {
           id: rule.id,
           emoji: rule.emoji,
           title: titles ? pickRandom(titles) : undefined,
           label: rule.label(rolls, sessionContext, playerName) || rule.id,
-          textTemplate: textFn(rolls, sessionContext, playerName, displayName),
+          textTemplate: rule.id === 'base_average' ? baseText : `${baseText} (${formattedPct} chance)`,
           improbabilityScore: rule.improbabilityScore(rolls, sessionContext),
+          rawProbability: prob,
+          formattedPct,
         };
       });
 
