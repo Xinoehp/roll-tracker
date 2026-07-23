@@ -1,9 +1,9 @@
 import { Component, HostListener, inject, signal, computed } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { SessionStateService } from '../../services/session-state.service';
-import { StatsService } from '../../services/stats.service';
-import { SettingsService } from '../../services/settings.service';
-import { Character, Roll } from '../../db/database.service';
+import { StatsService } from '../../../analytics/services/stats.service';
+import { SettingsService } from '../../../settings/services/settings.service';
+import { Character, Roll } from '../../../../core/db/database.service';
 
 @Component({
   selector: 'app-roll-entry-numpad',

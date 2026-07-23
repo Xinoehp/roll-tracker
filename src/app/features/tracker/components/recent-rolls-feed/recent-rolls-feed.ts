@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { SessionStateService } from '../../services/session-state.service';
-import { Character, Roll } from '../../db/database.service';
+import { Character, Roll } from '../../../../core/db/database.service';
 
 @Component({
   selector: 'app-recent-rolls-feed',

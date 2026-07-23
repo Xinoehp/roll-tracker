@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DatabaseService } from '../../db/database.service';
+import { DatabaseService } from '../../../../core/db/database.service';
 import { SettingsService } from '../../services/settings.service';
 
 @Component({

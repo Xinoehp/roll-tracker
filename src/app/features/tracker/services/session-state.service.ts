@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { DatabaseService, Campaign, Player, Character, Session, Roll } from '../db/database.service';
+import { DatabaseService, Campaign, Player, Character, Session, Roll } from '../../../core/db/database.service';
 
 @Injectable({
   providedIn: 'root',

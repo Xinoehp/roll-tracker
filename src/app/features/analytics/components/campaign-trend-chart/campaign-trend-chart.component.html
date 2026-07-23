@@ -1,0 +1,19 @@
+<div class="trend-chart-wrapper">
+  <div class="trend-controls-header">
+    <div class="metric-toggle-group">
+      <button class="toggle-btn" [class.active]="metric() === 'average'" (click)="setMetric('average')">
+        📈 Average Roll
+      </button>
+      <button class="toggle-btn" [class.active]="metric() === 'luckPct'" (click)="setMetric('luckPct')">
+        🍀 Luck Percentage
+      </button>
+    </div>
+    @if (isLoading()) {
+    <span class="loading-hint">Loading session trends...</span>
+    }
+  </div>
+
+  <div class="canvas-container">
+    <canvas #chartCanvas></canvas>
+  </div>
+</div>

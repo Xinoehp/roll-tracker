@@ -2,12 +2,12 @@ import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { App } from './app';
-import { DatabaseService } from './db/database.service';
-import { StatsService } from './services/stats.service';
-import { SessionStateService } from './services/session-state.service';
-import { RecapService } from './services/recap.service';
-import { SettingsService } from './services/settings.service';
-import { formatRollPosition, formatProbabilityPct } from './services/highlight-rules';
+import { DatabaseService } from './core/db/database.service';
+import { StatsService } from './features/analytics/services/stats.service';
+import { SessionStateService } from './features/tracker/services/session-state.service';
+import { RecapService } from './features/recap/services/recap.service';
+import { SettingsService } from './features/settings/services/settings.service';
+import { formatRollPosition, formatProbabilityPct } from './features/recap/services/highlight-rules';
 
 // Helper to seed a small mock database for stats validation
 async function seedMockDatabase(db: DatabaseService) {

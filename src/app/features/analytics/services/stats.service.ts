@@ -1,6 +1,6 @@
 import { Injectable, inject, computed } from '@angular/core';
-import { SessionStateService } from './session-state.service';
-import { Roll, Character } from '../db/database.service';
+import { SessionStateService } from '../../tracker/services/session-state.service';
+import { Roll, Character } from '../../../core/db/database.service';
 
 export interface RollStats {
   totalRolls: number;

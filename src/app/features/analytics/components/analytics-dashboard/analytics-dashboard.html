@@ -32,7 +32,39 @@
     </div>
   </div>
 
-  @if (currentStats()) {
+  <!-- Analytics View Subtabs (Standings, Face Distribution, Campaign Trends) -->
+  <div class="analytics-tabs-row">
+    <button class="subtab-btn" [class.active]="analyticsTab() === 'overview'" (click)="analyticsTab.set('overview')">
+      📊 Standings & KPIs
+    </button>
+    <button class="subtab-btn" [class.active]="analyticsTab() === 'distribution'" (click)="analyticsTab.set('distribution')">
+      🎲 Face Distribution (1–20)
+    </button>
+    @if (state.activeCampaign()) {
+    <button class="subtab-btn" [class.active]="analyticsTab() === 'trends'" (click)="analyticsTab.set('trends')">
+      📈 Session Trends
+    </button>
+    }
+  </div>
+
+  @if (analyticsTab() === 'distribution') {
+    <div class="distribution-view-panel">
+      <div class="filter-character-row">
+        <label>Filter Player / Character:</label>
+        <select class="char-filter-select" [value]="selectedCharacterForDistribution() ?? ''" (change)="selectedCharacterForDistribution.set($any($event.target).value === '' ? undefined : +$any($event.target).value)">
+          <option value="">All Players (Group Overall)</option>
+          @for (c of state.activeCharacters(); track c.id) {
+            <option [value]="c.id">{{ c.isDM ? 'Our Dungeon Master' : (c.name || c.playerName) }}</option>
+          }
+        </select>
+      </div>
+      <app-roll-distribution-chart [rolls]="distributionRolls()" [playerLabel]="distributionLabel()"></app-roll-distribution-chart>
+    </div>
+  } @else if (analyticsTab() === 'trends') {
+    <div class="trends-view-panel">
+      <app-campaign-trend-chart [campaignId]="state.activeCampaign()?.id" [characters]="state.activeCharacters()"></app-campaign-trend-chart>
+    </div>
+  } @else if (currentStats()) {
     @let statsObj = currentStats()!;
 
     <!-- KPI Overview Cards -->

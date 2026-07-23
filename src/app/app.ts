@@ -1,12 +1,12 @@
 import { Component, inject, signal, effect, computed, OnInit } from '@angular/core';
-import { DatabaseService, Campaign, Session, Player, Character } from './db/database.service';
-import { SessionStateService } from './services/session-state.service';
-import { RollEntryNumpadComponent } from './components/roll-entry-numpad/roll-entry-numpad';
-import { AnalyticsDashboardComponent } from './components/analytics-dashboard/analytics-dashboard';
-import { RecentRollsFeedComponent } from './components/recent-rolls-feed/recent-rolls-feed';
-import { SessionRecapViewComponent, RecapPlayerData } from './components/session-recap-view/session-recap-view';
-import { RecapService, StatHighlight } from './services/recap.service';
-import { SettingsViewComponent } from './components/settings-view/settings-view';
+import { DatabaseService, Campaign, Session, Player, Character } from './core/db/database.service';
+import { SessionStateService } from './features/tracker/services/session-state.service';
+import { RollEntryNumpadComponent } from './features/tracker/components/roll-entry-numpad/roll-entry-numpad';
+import { AnalyticsDashboardComponent } from './features/analytics/components/analytics-dashboard/analytics-dashboard';
+import { RecentRollsFeedComponent } from './features/tracker/components/recent-rolls-feed/recent-rolls-feed';
+import { SessionRecapViewComponent, RecapPlayerData } from './features/recap/components/session-recap-view/session-recap-view';
+import { RecapService, StatHighlight } from './features/recap/services/recap.service';
+import { SettingsViewComponent } from './features/settings/components/settings-view/settings-view';
 
 @Component({
   selector: 'app-root',

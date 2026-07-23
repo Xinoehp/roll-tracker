@@ -1,12 +1,15 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { DecimalPipe, PercentPipe } from '@angular/common';
-import { SessionStateService } from '../../services/session-state.service';
+import { SessionStateService } from '../../../tracker/services/session-state.service';
 import { StatsService, RollStats } from '../../services/stats.service';
-import { DatabaseService, Player, Character } from '../../db/database.service';
+import { DatabaseService, Player, Character } from '../../../../core/db/database.service';
+import { RollDistributionChartComponent } from '../roll-distribution-chart/roll-distribution-chart.component';
+import { CampaignTrendChartComponent } from '../campaign-trend-chart/campaign-trend-chart.component';
 
 @Component({
   selector: 'app-analytics-dashboard',
-  imports: [DecimalPipe, PercentPipe],
+  standalone: true,
+  imports: [DecimalPipe, PercentPipe, RollDistributionChartComponent, CampaignTrendChartComponent],
   templateUrl: './analytics-dashboard.html',
   styleUrl: './analytics-dashboard.css',
 })
@@ -17,6 +20,12 @@ export class AnalyticsDashboardComponent {
 
   // 'session', 'campaign', or 'global' (cross-campaign)
   statsScope = signal<'session' | 'campaign' | 'global'>('session');
+
+  // Distribution chart player filter (undefined = overall)
+  selectedCharacterForDistribution = signal<number | undefined>(undefined);
+
+  // Active tab in Analytics view ('overview' | 'distribution' | 'trends')
+  analyticsTab = signal<'overview' | 'distribution' | 'trends'>('overview');
 
   // Stats cache (reused for campaign & global scopes)
   playerCampaignStats = signal<Record<number, RollStats>>({});
@@ -111,6 +120,24 @@ export class AnalyticsDashboardComponent {
     } else {
       return this.campaignOverviewStats();
     }
+  });
+
+  // Computed rolls array for distribution chart
+  readonly distributionRolls = computed<number[]>(() => {
+    const selectedCharId = this.selectedCharacterForDistribution();
+    const rolls = this.state.rolls();
+    if (selectedCharId !== undefined) {
+      return rolls.filter(r => r.characterId === selectedCharId).map(r => r.value);
+    }
+    return rolls.map(r => r.value);
+  });
+
+  readonly distributionLabel = computed<string>(() => {
+    const selectedCharId = this.selectedCharacterForDistribution();
+    if (selectedCharId === undefined) return 'Overall Group';
+    const char = this.state.activeCharacters().find(c => c.id === selectedCharId);
+    if (!char) return 'Selected Character';
+    return char.isDM ? 'Our Dungeon Master' : (char.name || char.playerName || 'Selected Character');
   });
 
   // Reactive computed list for standings with sorting applied
