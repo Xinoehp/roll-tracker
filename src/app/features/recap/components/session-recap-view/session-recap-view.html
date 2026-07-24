@@ -1,13 +1,98 @@
 <div class="recap-card-container">
   <!-- Card Header -->
   <div class="recap-card-header">
-    <span class="campaign-tag">{{ campaignName() }}</span>
-    <h2>{{ sessionName() }}</h2>
-    <span class="date-badge">{{ sessionDate() }}</span>
+    <div class="header-titles">
+      <span class="campaign-tag">{{ campaignName() }}</span>
+      <h2>{{ sessionName() }}</h2>
+      <span class="date-badge">{{ sessionDate() }}</span>
+    </div>
+
+    <!-- View Mode Switcher Bar -->
+    <div class="view-switcher-container">
+      <h3>Views</h3>
+      <div class="recap-view-switcher">
+
+        <button class="switcher-btn" [class.active]="viewMode() === 'cards'" (click)="viewMode.set('cards')"
+          title="Visual card view per player">
+          🃏 Card
+        </button>
+        <button class="switcher-btn" [class.active]="viewMode() === 'narrative'" (click)="viewMode.set('narrative')"
+          title="Full story text for copy-pasting">
+          📜 Text
+        </button>
+        <button class="switcher-btn" [class.active]="viewMode() === 'table'" (click)="viewMode.set('table')"
+          title="Detailed standings table">
+          📊 Standings
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- Narrative Recap Box -->
-  @if (recapText()) {
+  @let parsed = parsedRecap();
+
+  <!-- MODE 1: Player Highlight Cards Deck -->
+  @if (viewMode() === 'cards') {
+  <div class="recap-cards-view">
+    @if (parsed.introText) {
+    <div class="recap-intro-banner">
+      <p>{{ parsed.introText }}</p>
+    </div>
+    }
+
+    <div class="player-cards-deck">
+      @for (item of parsed.highlights; track item.playerName) {
+      <div class="player-highlight-card" [style.border-left-color]="item.color">
+        <div class="player-card-header">
+          <div class="player-identity">
+            <span class="player-color-dot" [style.background-color]="item.color"></span>
+            <span class="player-name-heading">
+              @if (item.isDM) { 👑 }
+              {{ item.characterName || item.playerName }}
+            </span>
+          </div>
+          @if (item.title) {
+          <span class="award-title-pill">{{ item.emoji }} {{ item.title }}</span>
+          }
+        </div>
+
+        <!-- Stat Chips Row -->
+        @if (item.stats && item.stats[0] > 0) {
+        <div class="stat-chips-row">
+          <span class="stat-chip">🎲 {{ item.stats[0] }} rolls</span>
+          <span class="stat-chip">📈 {{ item.stats[2].toFixed(1) }} avg</span>
+          <span class="stat-chip">🍀 {{ (item.stats[3] * 100).toFixed(0) }}% luck</span>
+          @if (item.stats[6] > 0) {
+          <span class="stat-chip chip-gold">🎯 {{ item.stats[6] }} Nat 20s</span>
+          }
+          @if (item.stats[5] > 0) {
+          <span class="stat-chip chip-red">💀 {{ item.stats[5] }} Nat 1s</span>
+          }
+        </div>
+        }
+
+        <div class="player-card-body">
+          <p class="player-story-text">{{ item.storyText }}</p>
+        </div>
+
+        @if (item.probabilityTag) {
+        <div class="player-card-footer">
+          <span class="improbability-badge">⚡ {{ item.probabilityTag }}</span>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    @if (parsed.outroText) {
+    <div class="recap-outro-banner">
+      <p>{{ parsed.outroText }}</p>
+    </div>
+    }
+  </div>
+  }
+
+  <!-- MODE 2: Full Story Text (Copyable format) -->
+  @if (viewMode() === 'narrative' && recapText()) {
   <div class="recap-narrative-box">
     <span class="quote-icon-top">“</span>
     <div class="recap-narrative-text">{{ recapText() }}</div>
@@ -15,7 +100,8 @@
   </div>
   }
 
-  <!-- Standings Sheet Section -->
+  <!-- Standings Sheet Section (visible in 'table' mode or as footer in 'cards' mode) -->
+  @if (viewMode() === 'table' || viewMode() === 'cards') {
   <div class="recap-table-section">
     <h3>📊 Session Standings</h3>
 
@@ -23,15 +109,9 @@
       <table class="recap-standings-table">
         <thead>
           <tr>
-            <th (click)="toggleSort('name')">
-              Player
-              @if (sortBy() === 'name') {
-              <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
-              }
-            </th>
             <th (click)="toggleSort('character')">
               Character
-              @if (sortBy() === 'character') {
+              @if (sortBy() === 'character' || sortBy() === 'name') {
               <span class="sort-indicator">{{ sortDesc() ? '▼' : '▲' }}</span>
               }
             </th>
@@ -87,11 +167,10 @@
                 <span class="player-dot" [style.background-color]="getPlayerColor(idx)"></span>
                 <span class="player-name-text">
                   @if (player.isDM) { 👑 }
-                  {{ player.playerName }}
+                  {{ player.characterName || player.playerName }}
                 </span>
               </div>
             </td>
-            <td class="char-cell">{{ player.characterName || '-' }}</td>
             <td class="num-col" [class.best-cell]="getCellHighlight(player, 'rolls') === 'best'"
               [class.worst-cell]="getCellHighlight(player, 'rolls') === 'worst'">
               {{ player.stats[0] }}
@@ -126,4 +205,5 @@
       </table>
     </div>
   </div>
+  }
 </div>

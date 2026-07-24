@@ -383,12 +383,15 @@ export class App implements OnInit {
   sharedPlayers = computed<RecapPlayerData[]>(() => {
     const data = this.sharedRecapData();
     if (!data || !data.p) return [];
-    return data.p.map((player: any) => ({
-      playerName: player.n,
-      characterName: player.c,
-      isDM: !!player.dm,
-      stats: player.st
-    }));
+    return data.p.map((player: any) => {
+      const charName = player.c || (player.dm ? 'Our Dungeon Master' : 'Adventurer');
+      return {
+        playerName: charName,
+        characterName: charName,
+        isDM: !!player.dm,
+        stats: player.st
+      };
+    });
   });
   recapAlertMessage = signal<string>('');
 
@@ -710,8 +713,7 @@ export class App implements OnInit {
       : 'All Time';
 
     const pData = this.getRecapPreviewData().map(p => ({
-      n: p.playerName,
-      c: p.characterName,
+      c: p.characterName || (p.isDM ? 'Our Dungeon Master' : p.playerName),
       dm: p.isDM,
       st: p.stats
     }));

@@ -7,6 +7,7 @@ import { StatsService } from './features/analytics/services/stats.service';
 import { SessionStateService } from './features/tracker/services/session-state.service';
 import { RecapService } from './features/recap/services/recap.service';
 import { SettingsService } from './features/settings/services/settings.service';
+import { SessionRecapViewComponent } from './features/recap/components/session-recap-view/session-recap-view';
 import { formatRollPosition, formatProbabilityPct } from './features/recap/services/highlight-rules';
 import {
   getRandomSessionIntro,
@@ -183,21 +184,21 @@ describe('App', () => {
       d: 'All Time',
       r: 'Narrative content',
       p: [
-        { n: 'David', c: 'Dungeon Master', dm: true, st: [105, 1177, 11.2, 0.57, 0.07, 6, 9] },
-        { n: 'Charlie', c: 'Paladin', dm: false, st: [77, 884, 11.48, 0.60, 0.10, 1, 5] }
+        { c: 'Our Dungeon Master', dm: true, st: [105, 1177, 11.2, 0.57, 0.07, 6, 9] },
+        { c: 'Paladin', dm: false, st: [77, 884, 11.48, 0.60, 0.10, 1, 5] }
       ]
     });
 
     const mapped = app.sharedPlayers();
     expect(mapped.length).toBe(2);
     expect(mapped[0]).toEqual({
-      playerName: 'David',
-      characterName: 'Dungeon Master',
+      playerName: 'Our Dungeon Master',
+      characterName: 'Our Dungeon Master',
       isDM: true,
       stats: [105, 1177, 11.2, 0.57, 0.07, 6, 9]
     });
     expect(mapped[1]).toEqual({
-      playerName: 'Charlie',
+      playerName: 'Paladin',
       characterName: 'Paladin',
       isDM: false,
       stats: [77, 884, 11.48, 0.60, 0.10, 1, 5]
@@ -250,6 +251,46 @@ describe('App', () => {
     expect(SESSION_OUTROS).toContain(sessionOutro);
     expect(CAMPAIGN_INTROS).toContain(campaignIntro);
     expect(CAMPAIGN_OUTROS).toContain(campaignOutro);
+  });
+
+  it('should parse recap text into structured player cards in SessionRecapViewComponent', () => {
+    const fixture = TestBed.createComponent(SessionRecapViewComponent);
+    const component = fixture.componentInstance;
+
+    const testRecap = `🎲 Roll Recap - 24 April 2026 🎲
+
+Gather 'round, brave adventurers, for the recount of our dice-rolling escapades!
+
+🔥 Campbell The Comeback Kid:
+Like counting steps on a staircase, Campbell rolled a perfect 4-number sequence (17 → 18 → 19 → 20)! (0.10% chance)
+
+👑 Dungeon Master The Chosen One:
+Our Dungeon Master topped the board as our supreme roller with 11.4 average! (<0.01% chance)
+
+Until next time, adventurers, may the dice roll ever in your favor! 🎲`;
+
+    fixture.componentRef.setInput('recapText', testRecap);
+    fixture.componentRef.setInput('playersData', [
+      { playerName: 'Campbell', characterName: 'Campbell', isDM: false, stats: [18, 200, 11.1, 0.5, 0.6, 1, 2] },
+      { playerName: 'Dungeon Master', characterName: 'DM', isDM: true, stats: [20, 228, 11.4, 0.6, 0.9, 0, 4] }
+    ]);
+    fixture.detectChanges();
+
+    const parsed = component.parsedRecap();
+    expect(parsed.headerTitle).toContain('Roll Recap');
+    expect(parsed.introText).toContain('Gather \'round');
+    expect(parsed.highlights.length).toBe(2);
+    expect(parsed.highlights[0].playerName).toBe('Campbell');
+    expect(parsed.highlights[0].emoji).toBe('🔥');
+    expect(parsed.highlights[0].probabilityTag).toBe('(0.10% chance)');
+    expect(parsed.highlights[1].playerName).toBe('Dungeon Master');
+    expect(parsed.highlights[1].isDM).toBe(true);
+    expect(parsed.outroText).toContain('Until next time');
+
+    // Test view mode toggling
+    expect(component.viewMode()).toBe('cards');
+    component.viewMode.set('narrative');
+    expect(component.viewMode()).toBe('narrative');
   });
 });
 
