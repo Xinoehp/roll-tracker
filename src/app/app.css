@@ -832,6 +832,13 @@
   overflow: hidden;
 }
 
+.recap-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .recap-preview-pane h4 {
   margin: 0;
   font-size: 0.85rem;
@@ -839,6 +846,25 @@
   color: #64748b;
   letter-spacing: 0.05em;
   font-weight: 700;
+}
+
+.btn-reroll-flavour {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reroll-flavour:hover {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
 .live-preview-box {

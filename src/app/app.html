@@ -256,7 +256,12 @@
 
           <!-- Right Standalone Preview Pane -->
           <div class="recap-preview-pane">
-            <h4>✍️ Standalone Preview</h4>
+            <div class="recap-preview-header">
+              <h4>✍️ Standalone Preview</h4>
+              <button class="btn-reroll-flavour" (click)="rerollIntroOutro()" title="Shuffle intro & outro phrasing">
+                🔀 Shuffle Intro & Outro
+              </button>
+            </div>
             <div class="live-preview-box">
               <app-session-recap-view [campaignName]="state.activeCampaign()?.name || ''"
                 [sessionName]="recapType() === 'session' ? (state.activeSession()?.name || '') : 'Campaign Summary'"

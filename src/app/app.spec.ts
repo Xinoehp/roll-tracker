@@ -8,6 +8,16 @@ import { SessionStateService } from './features/tracker/services/session-state.s
 import { RecapService } from './features/recap/services/recap.service';
 import { SettingsService } from './features/settings/services/settings.service';
 import { formatRollPosition, formatProbabilityPct } from './features/recap/services/highlight-rules';
+import {
+  getRandomSessionIntro,
+  getRandomSessionOutro,
+  getRandomCampaignIntro,
+  getRandomCampaignOutro,
+  SESSION_INTROS,
+  SESSION_OUTROS,
+  CAMPAIGN_INTROS,
+  CAMPAIGN_OUTROS,
+} from './features/recap/services/highlight-flavour';
 
 // Helper to seed a small mock database for stats validation
 async function seedMockDatabase(db: DatabaseService) {
@@ -228,6 +238,18 @@ describe('App', () => {
     expect(formatProbabilityPct(0.0081)).toBe('0.81%');
     expect(formatProbabilityPct(0.0001)).toBe('0.01%');
     expect(formatProbabilityPct(0.000005)).toBe('<0.01%');
+  });
+
+  it('should return randomised intro and outro strings from flavour pools', () => {
+    const sessionIntro = getRandomSessionIntro();
+    const sessionOutro = getRandomSessionOutro();
+    const campaignIntro = getRandomCampaignIntro();
+    const campaignOutro = getRandomCampaignOutro();
+
+    expect(SESSION_INTROS).toContain(sessionIntro);
+    expect(SESSION_OUTROS).toContain(sessionOutro);
+    expect(CAMPAIGN_INTROS).toContain(campaignIntro);
+    expect(CAMPAIGN_OUTROS).toContain(campaignOutro);
   });
 });
 

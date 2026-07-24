@@ -7,6 +7,12 @@ import { RecentRollsFeedComponent } from './features/tracker/components/recent-r
 import { SessionRecapViewComponent, RecapPlayerData } from './features/recap/components/session-recap-view/session-recap-view';
 import { RecapService, StatHighlight } from './features/recap/services/recap.service';
 import { SettingsViewComponent } from './features/settings/components/settings-view/settings-view';
+import {
+  getRandomSessionIntro,
+  getRandomSessionOutro,
+  getRandomCampaignIntro,
+  getRandomCampaignOutro,
+} from './features/recap/services/highlight-flavour';
 
 @Component({
   selector: 'app-root',
@@ -418,6 +424,7 @@ export class App implements OnInit {
     if (!campaignId) return;
 
     this.recapType.set(type);
+    this.rerollIntroOutro();
 
     // Fetch all characters in the campaign and resolve playerName from the Players table
     const rawCharacters = await this.db.characters.where('campaignId').equals(campaignId).toArray();
@@ -592,17 +599,36 @@ export class App implements OnInit {
     return list;
   }
 
+  // Selected intro & outro text signals
+  recapIntro = signal<string>('');
+  recapOutro = signal<string>('');
+
+  rerollIntroOutro() {
+    const type = this.recapType();
+    if (type === 'session') {
+      this.recapIntro.set(getRandomSessionIntro());
+      this.recapOutro.set(getRandomSessionOutro());
+    } else {
+      this.recapIntro.set(getRandomCampaignIntro());
+      this.recapOutro.set(getRandomCampaignOutro());
+    }
+  }
+
   getCompiledRecapText(): string {
     const lines: string[] = [];
     const type = this.recapType();
 
+    if (!this.recapIntro() || !this.recapOutro()) {
+      this.rerollIntroOutro();
+    }
+
     if (type === 'session') {
       const date = this.state.activeSession()?.date;
       lines.push(`🎲 Roll Recap - ${date ? new Date(date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'Session'} 🎲\n`);
-      lines.push(`Gather 'round, brave adventurers, for the recount of our dice-rolling escapades! The results are as unpredictable as ever.\n`);
+      lines.push(`${this.recapIntro()}\n`);
     } else {
       lines.push(`👑 Campaign Chronicles - ${this.state.activeCampaign()?.name || 'Campaign'} 👑\n`);
-      lines.push(`All paths lead to this! Gather 'round as we look back at the grand tally of fate and fortune across our entire campaign!\n`);
+      lines.push(`${this.recapIntro()}\n`);
     }
 
     const characters = this.activeRecapCharacters();
@@ -629,7 +655,7 @@ export class App implements OnInit {
       }
     }
 
-    lines.push(`Until next time, adventurers, may the dice roll ever in your favor! 🎲`);
+    lines.push(this.recapOutro());
     return lines.join('\n');
   }
 

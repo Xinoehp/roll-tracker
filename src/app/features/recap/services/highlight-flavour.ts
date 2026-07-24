@@ -721,3 +721,73 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
     },
   ],
 };
+
+// ─── Randomised Intros & Outros ────────────────────────────────────────────────
+
+export const SESSION_INTROS: string[] = [
+  "Gather 'round, brave adventurers, for the recount of our dice-rolling escapades! The results are as unpredictable as ever.",
+  "The dice have spoken! Here is how fate unfolded during our latest session.",
+  "Another session in the books! Let's examine the heroic triumphs, devastating blunders, and mathematical oddities of today's rolls.",
+  "Dust off the dice trays and examine the evidence! Here is the statistical chronicle of our session's wild rolls.",
+  "High rolls, low rolls, and legendary moments — here is the official recap of how the d20s treated our party today!",
+  "The fates were active today! Let's dive into the roll recap and see who was blessed by fortune and who was tested by chaos.",
+  "The dust has settled on today's session, but the numbers tell a tale of their own. Here's your roll recap!",
+  "Welcome to the official session breakdown! Below is the chronological tally of triumphs, fumbles, and statistical anomalies.",
+  "From critical hits to tragic blunders, here is how the dice gods smiled (or frowned) upon us in today's game!",
+  "Let the records show what transpired at the table today! Here are the statistical highlights of our session.",
+];
+
+export const SESSION_OUTROS: string[] = [
+  "Until next time, adventurers, may the dice roll ever in your favor! 🎲",
+  "May your future nat 20s be plentiful and your nat 1s few and far between! See you next session! 🎲",
+  "That wraps up today's roll tally! May Lady Luck walk beside you until our next game. 🎲",
+  "Keep your dice warm and your character sheets ready. Until next time, brave heroes! 🎲",
+  "May the gods of probability smile on your next adventure! See you next session. 🎲",
+  "Thus ends another chapter written by the d20. Until next time, keep rolling! 🎲",
+  "May your damage be high and your saving throws higher! Until next session! 🎲",
+  "And so the dice rest... for now. Prepare for next session, adventurers! 🎲",
+  "May the d20s treat you kindly until we meet around the table once more! 🎲",
+  "Store your dice safely, heroes — another epic session awaits us next time! 🎲",
+];
+
+export const CAMPAIGN_INTROS: string[] = [
+  "All paths lead to this! Gather 'round as we look back at the grand tally of fate and fortune across our entire campaign!",
+  "A grand chronicle of epic adventures! Here is the statistical legacy of our entire campaign so far.",
+  "Across countless sessions and thousands of d20 rolls, the numbers tell an epic story! Here is our campaign recap.",
+  "Looking back across the entire campaign, fate has woven quite a tapestry of triumphs and disasters. Let's look at the numbers!",
+  "The long road we've traveled together is paved with natural 20s and catastrophic 1s! Here is the ultimate campaign chronicle.",
+  "From day one to the present, here is the grand statistical record of our party's journey through this campaign!",
+  "Heroic legends are built roll by roll. Here is how our entire campaign measures up in the eyes of probability!",
+  "A campaign's true story is written in the dice! Let's unveil the full statistical history of our party's adventures.",
+  "Thousands of rolls, endless memories, and undeniable statistics — here is the campaign-wide hall of fame!",
+  "Look upon the grand tally of fate! Here is the complete statistical breakdown of our entire campaign.",
+];
+
+export const CAMPAIGN_OUTROS: string[] = [
+  "What an unforgettable journey it has been! Here's to many more legendary campaigns ahead! 👑",
+  "The campaign record stands tall! May the legend of our party live on across every realm! 👑",
+  "Across all sessions and every single roll, what a story we've written together! Onward to new adventures! 👑",
+  "Through triumphs and disasters, our party stood firm. Here's to the next great chapter in our saga! 👑",
+  "The dice have recorded an unforgettable campaign! May your future adventures be just as legendary! 👑",
+  "And so another campaign milestone is achieved! Keep rolling high, heroes! 👑",
+  "A legendary record for a legendary party! Thank you for an incredible campaign! 👑",
+  "The stats don't lie — this campaign was one for the history books! 👑",
+  "From the first roll to the last, what a wild ride. May the dice favor us in every campaign to come! 👑",
+  "May the stories (and stats) of this campaign echo through the halls for years to come! 👑",
+];
+
+export function getRandomSessionIntro(): string {
+  return pickRandom(SESSION_INTROS);
+}
+
+export function getRandomSessionOutro(): string {
+  return pickRandom(SESSION_OUTROS);
+}
+
+export function getRandomCampaignIntro(): string {
+  return pickRandom(CAMPAIGN_INTROS);
+}
+
+export function getRandomCampaignOutro(): string {
+  return pickRandom(CAMPAIGN_OUTROS);
+}
