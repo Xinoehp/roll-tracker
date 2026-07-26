@@ -458,9 +458,43 @@ export class App implements OnInit {
       totalRollsCount += rVals.length;
     }
 
+    let highestAvg = -1;
+    let highestAvgPlayer: string | undefined = undefined;
+    let lowestAvg = 999;
+    let lowestAvgPlayer: string | undefined = undefined;
+    let mostRolls = -1;
+    let mostRollsPlayer: string | undefined = undefined;
+
+    for (const char of characters) {
+      if (!char.id) continue;
+      const rVals = rollsMap[char.id] || [];
+      const N = rVals.length;
+      if (N >= 3) {
+        const avg = rVals.reduce((a, b) => a + b, 0) / N;
+        if (avg > highestAvg) {
+          highestAvg = avg;
+          highestAvgPlayer = char.playerName || 'Player';
+        }
+        if (avg < lowestAvg) {
+          lowestAvg = avg;
+          lowestAvgPlayer = char.playerName || 'Player';
+        }
+      }
+      if (N > mostRolls) {
+        mostRolls = N;
+        mostRollsPlayer = char.playerName || 'Player';
+      }
+    }
+
     const sessContext: SessionContext = {
       totalRollsInSession: totalRollsCount,
       playerRollCounts: rollsCountMap,
+      highestAvgPlayer,
+      highestAvg: highestAvg > -1 ? highestAvg : undefined,
+      lowestAvgPlayer,
+      lowestAvg: lowestAvg < 999 ? lowestAvg : undefined,
+      mostRollsPlayer,
+      mostRollsCount: mostRolls > -1 ? mostRolls : undefined,
     };
 
     for (const char of characters) {

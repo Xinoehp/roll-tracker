@@ -220,6 +220,27 @@ export const HIGHLIGHT_TITLES: Record<string, string[]> = {
     'Fading Flame',
     'The Cliff Drop',
   ],
+  all_above_average: [
+    'Flawless Victory',
+    'Above the Fray',
+    'Untouchable',
+    'High Roller',
+    'No Low Ground',
+  ],
+  all_below_average: [
+    'Rough Day',
+    'Below the Belt',
+    'The Struggle',
+    'Rock Bottom',
+    'Grounded',
+  ],
+  extremes_only: [
+    'All or Nothing',
+    'No Middle Ground',
+    'Feast or Famine',
+    'The Extremist',
+    'Binary Roller',
+  ],
 };
 
 // ─── Alternative Narrative Text Variants ───────────────────────────────────────
@@ -778,6 +799,51 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
       const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
       const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
       return `A classic case of god to garbage — ${dn} started like an unstoppable force (avg ${avg1}) before crashing down to a ${avg2} average in the second act.`;
+    },
+  ],
+  all_above_average: [
+    (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `${dn} didn't roll below 11 a single time! Every one of their ${rolls.length} rolls landed at 11 or above, for a pristine average of ${avg.toFixed(1)}. The dice were firmly on their side!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `A flawless performance from ${dn} — all ${rolls.length} rolls came in at 11 or higher, averaging a stellar ${avg.toFixed(1)}. Not a single dip below the midpoint!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `${dn} defied the odds with ${rolls.length} consecutive above-average rolls (avg ${avg.toFixed(1)}). Every single die landed in the upper half — the d20 only had good news today!`;
+    },
+  ],
+  all_below_average: [
+    (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `${dn} couldn't catch a break — every single one of their ${rolls.length} rolls came in at 10 or below, landing a tough average of ${avg.toFixed(1)}. The dice gods were not listening today!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `All ${rolls.length} of ${dn}'s rolls stayed stubbornly at 10 or below, averaging just ${avg.toFixed(1)}. The upper half of the d20 was apparently off-limits!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `A rough outing for ${dn} — not one of their ${rolls.length} rolls broke past 10, settling for an average of ${avg.toFixed(1)}. Sometimes the dice just say no!`;
+    },
+  ],
+  extremes_only: [
+    (rolls, _ctx, _pn, dn) => {
+      const highs = rolls.filter(r => r >= 16).length;
+      const lows = rolls.filter(r => r <= 5).length;
+      return `${dn} rolled nothing but extremes — ${highs} high (≥16) and ${lows} low (≤5) across ${rolls.length} rolls, with absolutely nothing in between! The middle of the die might as well not exist.`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const highs = rolls.filter(r => r >= 16).length;
+      const lows = rolls.filter(r => r <= 5).length;
+      return `No middle ground for ${dn}! Their ${rolls.length} rolls were split between ${highs} big hits (≥16) and ${lows} hard misses (≤5). Moderation? Never heard of it.`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const highs = rolls.filter(r => r >= 16).length;
+      const lows = rolls.filter(r => r <= 5).length;
+      return `It was feast or famine for ${dn} — ${highs} rolls of 16+ and ${lows} rolls of 5 or below, with nothing in between across all ${rolls.length} rolls. The d20 only deals in absolutes!`;
     },
   ],
 };

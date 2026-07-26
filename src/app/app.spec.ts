@@ -543,5 +543,32 @@ describe('Recap Service and URL Sharing Validation', () => {
     expect(peakedHighlight).toBeDefined();
     expect(peakedHighlight?.emoji).toBe('☄️');
     expect(peakedHighlight?.label).toContain('Peaked Early');
+
+    // 7. Check All Above Average highlight (every roll ≥11, low roll count)
+    const allAboveRolls = [12, 15, 18, 11];
+    const hAbove = recapService.generateHighlights('Frank', 'Ranger', false, allAboveRolls, context);
+    const aboveHighlight = hAbove.find(h => h.id === 'all_above_average');
+    expect(aboveHighlight).toBeDefined();
+    expect(aboveHighlight?.emoji).toBe('🎯');
+
+    // 8. Check All Below Average highlight (every roll ≤10, low roll count)
+    const allBelowRolls = [3, 7, 10, 5];
+    const hBelow = recapService.generateHighlights('Grace', 'Bard', false, allBelowRolls, context);
+    const belowHighlight = hBelow.find(h => h.id === 'all_below_average');
+    expect(belowHighlight).toBeDefined();
+    expect(belowHighlight?.emoji).toBe('🕳️');
+
+    // 9. Check Extremes Only highlight (every roll ≤5 or ≥16)
+    const extremesRolls = [1, 20, 3, 18];
+    const hExtremes = recapService.generateHighlights('Hank', 'Warlock', false, extremesRolls, context);
+    const extremesHighlight = hExtremes.find(h => h.id === 'extremes_only');
+    expect(extremesHighlight).toBeDefined();
+    expect(extremesHighlight?.emoji).toBe('💎');
+
+    // 10. Check that mixed rolls do NOT trigger all_above_average
+    const mixedRolls = [12, 5, 18, 11];
+    const hMixed = recapService.generateHighlights('Ivy', 'Monk', false, mixedRolls, context);
+    expect(hMixed.find(h => h.id === 'all_above_average')).toBeUndefined();
+    expect(hMixed.find(h => h.id === 'all_below_average')).toBeUndefined();
   });
 });

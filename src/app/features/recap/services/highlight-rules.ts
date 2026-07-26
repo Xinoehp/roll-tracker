@@ -880,4 +880,47 @@ export const HIGHLIGHT_RULES: HighlightRule[] = [
       return avg1 >= 12.0 && avg2 <= 9.5 && (avg1 - avg2) >= 3.5;
     },
   },
+
+  // ── All Above Average (every roll ≥11, works with low roll counts) ──
+  {
+    id: 'all_above_average',
+    emoji: '🎯',
+    label: (rolls) => `Flawless! All ${rolls.length} rolls were ≥11`,
+    generateText: (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `${dn} didn't roll below 11 a single time! Every one of their ${rolls.length} rolls landed at 11 or above, for a pristine average of ${avg.toFixed(1)}. The dice were firmly on their side!`;
+    },
+    rawProbability: (rolls) => Math.max(1e-6, Math.pow(0.5, rolls.length)),
+    improbabilityScore: (rolls) => pValueToScore(Math.pow(0.5, rolls.length)),
+    isValid: (rolls) => rolls.length >= 2 && rolls.every(r => r >= 11),
+  },
+
+  // ── All Below Average (every roll ≤10, works with low roll counts) ──
+  {
+    id: 'all_below_average',
+    emoji: '🕳️',
+    label: (rolls) => `Rough day! All ${rolls.length} rolls were ≤10`,
+    generateText: (rolls, _ctx, _pn, dn) => {
+      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+      return `${dn} couldn't catch a break — every single one of their ${rolls.length} rolls came in at 10 or below, landing a tough average of ${avg.toFixed(1)}. The dice gods were not listening today!`;
+    },
+    rawProbability: (rolls) => Math.max(1e-6, Math.pow(0.5, rolls.length)),
+    improbabilityScore: (rolls) => pValueToScore(Math.pow(0.5, rolls.length)),
+    isValid: (rolls) => rolls.length >= 2 && rolls.every(r => r <= 10),
+  },
+
+  // ── Extremes Only (every roll ≤5 or ≥16, no mid-range) ──
+  {
+    id: 'extremes_only',
+    emoji: '💎',
+    label: (rolls) => `Extremes Only! All ${rolls.length} rolls were ≤5 or ≥16`,
+    generateText: (rolls, _ctx, _pn, dn) => {
+      const highs = rolls.filter(r => r >= 16).length;
+      const lows = rolls.filter(r => r <= 5).length;
+      return `${dn} rolled nothing but extremes — ${highs} high (≥16) and ${lows} low (≤5) across ${rolls.length} rolls, with absolutely nothing in between! The middle of the die might as well not exist.`;
+    },
+    rawProbability: (rolls) => Math.max(1e-6, Math.pow(0.5, rolls.length)),
+    improbabilityScore: (rolls) => pValueToScore(Math.pow(0.5, rolls.length)),
+    isValid: (rolls) => rolls.length >= 2 && rolls.every(r => r <= 5 || r >= 16),
+  },
 ];
