@@ -235,6 +235,52 @@ export class App implements OnInit {
     this.showSessionForm.set(false);
   }
 
+  // Open edit modal for a session
+  openEditSessionModal(session: Session, event?: Event) {
+    if (event) event.stopPropagation();
+    this.state.activeSession.set(session);
+    this.editSessionName.set(session.name);
+    this.editSessionDate.set(session.date);
+    this.editSessionNotes.set(session.notes || '');
+    this.state.showEditSessionModal.set(true);
+  }
+
+  // Delete a session and its associated rolls
+  async handleDeleteSession(session: Session, event?: Event) {
+    if (event) event.stopPropagation();
+    if (!session || !session.id) return;
+
+    const confirmMsg = `Are you sure you want to delete session "${session.name}"? All rolls recorded in this session will be permanently deleted.`;
+    if (!confirm(confirmMsg)) return;
+
+    // 1. Delete all rolls matching this session
+    await this.db.rolls.where('sessionId').equals(session.id).delete();
+
+    // 2. Delete the session
+    await this.db.sessions.delete(session.id);
+
+    // 3. Refresh session list
+    const activeCamp = this.state.activeCampaign();
+    if (activeCamp && activeCamp.id !== undefined) {
+      await this.loadSessionsForCampaign(activeCamp.id);
+    }
+
+    // 4. Update active session selection
+    if (this.state.activeSession()?.id === session.id) {
+      const remaining = this.sessionsList();
+      if (remaining.length > 0) {
+        await this.selectSession(remaining[0]);
+      } else {
+        this.state.activeSession.set(null);
+        this.state.rolls.set([]);
+      }
+    }
+
+    // Close modal if open
+    this.state.showEditSessionModal.set(false);
+    this.showTransientMessage(`Session "${session.name}" deleted.`);
+  }
+
   // Save session edits
   async handleUpdateSession() {
     const session = this.state.activeSession();
@@ -262,6 +308,7 @@ export class App implements OnInit {
 
     // Close the modal
     this.state.showEditSessionModal.set(false);
+    this.showTransientMessage(`Session details updated.`);
   }
 
   // Add Character to campaign (with optional new player creation or existing selection)

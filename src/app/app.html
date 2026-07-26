@@ -53,12 +53,18 @@
         <div class="empty-list-text">No sessions. Click + to add.</div>
         } @else {
         @for (sess of sessionsList(); track sess.id) {
-        <button class="list-item" [class.active]="state.activeSession()?.id === sess.id" (click)="selectSession(sess)">
-          <div class="list-item-content">
-            <span class="sess-title">{{ sess.name }}</span>
-            <span class="sess-date">{{ sess.date }}</span>
+        <div class="session-list-item-wrapper" [class.active]="state.activeSession()?.id === sess.id">
+          <button class="list-item" [class.active]="state.activeSession()?.id === sess.id" (click)="selectSession(sess)">
+            <div class="list-item-content">
+              <span class="sess-title">{{ sess.name }}</span>
+              <span class="sess-date">{{ sess.date }}</span>
+            </div>
+          </button>
+          <div class="session-actions-row">
+            <button class="edit-item-small-btn" (click)="openEditSessionModal(sess, $event)" title="Edit Session Details">✏️</button>
+            <button class="delete-item-btn" (click)="handleDeleteSession(sess, $event)" title="Delete Session">🗑️</button>
           </div>
-        </button>
+        </div>
         }
         }
       </div>
@@ -159,8 +165,10 @@
         @if (state.activeSession()) {
         <span class="widget-sess">
           {{ state.activeSession()?.name }}
-          <button class="edit-sess-name-btn" (click)="state.showEditSessionModal.set(true)"
-            title="Edit Session Name/Date">✏️</button>
+          <button class="edit-sess-name-btn" (click)="openEditSessionModal(state.activeSession()!, $event)"
+            title="Edit Session Details">✏️</button>
+          <button class="delete-sess-name-btn" (click)="handleDeleteSession(state.activeSession()!, $event)"
+            title="Delete Active Session">🗑️</button>
         </span>
         }
       </div>
@@ -431,10 +439,13 @@
         <textarea placeholder="Optional notes or summary..." [value]="editSessionNotes()"
           (input)="setEditSessionNotes($event)" rows="3"></textarea>
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="state.showEditSessionModal.set(false)">Cancel</button>
-        <button class="btn btn-primary" [disabled]="!editSessionName().trim() || !editSessionDate().trim()"
-          (click)="handleUpdateSession()">Save Changes</button>
+      <div class="modal-actions modal-actions-split">
+        <button class="btn btn-danger-link" (click)="handleDeleteSession(state.activeSession()!)">🗑️ Delete Session</button>
+        <div class="modal-actions-right">
+          <button class="btn btn-secondary" (click)="state.showEditSessionModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" [disabled]="!editSessionName().trim() || !editSessionDate().trim()"
+            (click)="handleUpdateSession()">Save Changes</button>
+        </div>
       </div>
     </div>
   </div>

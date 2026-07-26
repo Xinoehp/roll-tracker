@@ -253,6 +253,57 @@ describe('App', () => {
     expect(CAMPAIGN_OUTROS).toContain(campaignOutro);
   });
 
+  it('should support editing session details in app', async () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    const db = TestBed.inject(DatabaseService);
+    await seedMockDatabase(db);
+
+    const activeCamp = (await db.campaigns.toArray())[0];
+    app.state.activeCampaign.set(activeCamp);
+    await app.loadSessionsForCampaign(activeCamp.id!);
+
+    const sess = app.sessionsList()[0];
+    app.openEditSessionModal(sess);
+    expect(app.editSessionName()).toBe(sess.name);
+
+    app.editSessionName.set('Renamed Session 1');
+    await app.handleUpdateSession();
+
+    const updatedInDb = await db.sessions.get(sess.id!);
+    expect(updatedInDb?.name).toBe('Renamed Session 1');
+  });
+
+  it('should support deleting a session and its recorded rolls in app', async () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    const db = TestBed.inject(DatabaseService);
+    await seedMockDatabase(db);
+
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+
+    try {
+      const activeCamp = (await db.campaigns.toArray())[0];
+      app.state.activeCampaign.set(activeCamp);
+      await app.loadSessionsForCampaign(activeCamp.id!);
+
+      const sessToDelete = app.sessionsList()[0];
+      const initialRollCount = await db.rolls.where('sessionId').equals(sessToDelete.id!).count();
+      expect(initialRollCount).toBeGreaterThan(0);
+
+      await app.handleDeleteSession(sessToDelete);
+
+      const sessInDb = await db.sessions.get(sessToDelete.id!);
+      expect(sessInDb).toBeUndefined();
+
+      const remainingRolls = await db.rolls.where('sessionId').equals(sessToDelete.id!).count();
+      expect(remainingRolls).toBe(0);
+    } finally {
+      window.confirm = originalConfirm;
+    }
+  });
+
   it('should parse recap text into structured player cards in SessionRecapViewComponent', () => {
     const fixture = TestBed.createComponent(SessionRecapViewComponent);
     const component = fixture.componentInstance;

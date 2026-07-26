@@ -152,10 +152,33 @@
   cursor: pointer;
   transition: all 0.15s ease;
 }
+.session-list-item-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
 
-.list-item:hover {
+.session-list-item-wrapper:hover {
   background: rgba(255, 255, 255, 0.03);
-  color: #e2e8f0;
+}
+
+.session-list-item-wrapper .list-item {
+  flex: 1;
+}
+
+.session-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.session-list-item-wrapper:hover .session-actions-row {
+  opacity: 1;
 }
 
 .list-item.active {
@@ -380,21 +403,26 @@
   letter-spacing: 0.05em;
 }
 
-.form-group input[type="text"],
-.form-group input[type="date"] {
+.form-group input,
+.form-group select,
+.form-group textarea {
   padding: 0.6rem 0.75rem;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   color: #f1f5f9;
   font-family: inherit;
   font-size: 0.9rem;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  resize: vertical;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* Color presets picker */
@@ -1015,7 +1043,7 @@
   gap: 0.25rem;
 }
 
-.edit-sess-name-btn {
+.edit-sess-name-btn, .delete-sess-name-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -1024,10 +1052,43 @@
   align-items: center;
   font-size: 0.75rem;
   transition: transform 0.1s ease;
+  opacity: 0.85;
 }
 
-.edit-sess-name-btn:hover {
+.edit-sess-name-btn:hover, .delete-sess-name-btn:hover {
   transform: scale(1.2);
+  opacity: 1;
+}
+
+.modal-actions-split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-danger-link {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.55rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-danger-link:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #ffffff;
 }
 
 /* Sidebar Footer (Backup & Restore) styling */
