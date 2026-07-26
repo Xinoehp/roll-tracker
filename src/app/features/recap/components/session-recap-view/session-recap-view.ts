@@ -42,6 +42,7 @@ export class SessionRecapViewComponent {
   public readonly sessionDate = input<string>('');
   public readonly recapText = input<string>('');
   public readonly playersData = input<RecapPlayerData[]>([]);
+  public readonly showSharedHeader = input<boolean>(false);
 
   // Active View Mode ('cards' | 'narrative' | 'table')
   public readonly viewMode = signal<'cards' | 'narrative' | 'table'>('cards');

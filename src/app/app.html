@@ -1,16 +1,9 @@
 @if (sharedRecapData()) {
 <!-- Standalone Share Landing Page -->
 <div class="shared-landing-container">
-  <header class="shared-header-banner">
-    <div class="shared-banner-left">
-      <img class="shared-logo-img" src="logo.jpg" alt="Roll Stats Logo" />
-      <h1>Roll Stats</h1>
-    </div>
-    <a href="./" class="btn btn-primary shared-action-btn">Launch Tracker App</a>
-  </header>
   <main class="shared-page-content">
     @if (sharedRecapData(); as data) {
-    <app-session-recap-view [campaignName]="data.c || ''" [sessionName]="data.s || ''" [sessionDate]="data.d || ''"
+    <app-session-recap-view [showSharedHeader]="true" [campaignName]="data.c || ''" [sessionName]="data.s || ''" [sessionDate]="data.d || ''"
       [recapText]="data.r || ''" [playersData]="sharedPlayers()" />
     }
   </main>
