@@ -53,8 +53,14 @@
         <label for="dist-char-filter">Filter Player / Character:</label>
         <select id="dist-char-filter" class="char-filter-select" [value]="selectedCharacterForDistribution() ?? ''" (change)="selectedCharacterForDistribution.set($any($event.target).value === '' ? undefined : +$any($event.target).value)">
           <option value="">All Players (Group Overall)</option>
-          @for (c of state.activeCharacters(); track c.id) {
-            <option [value]="c.id">{{ c.isDM ? 'Our Dungeon Master' : (c.name || c.playerName) }}</option>
+          @if (statsScope() === 'global') {
+            @for (p of globalPlayers(); track p.id) {
+              <option [value]="p.id">{{ p.name }}</option>
+            }
+          } @else {
+            @for (c of state.activeCharacters(); track c.id) {
+              <option [value]="c.id">{{ c.isDM ? 'Our Dungeon Master' : (c.name || c.playerName) }}</option>
+            }
           }
         </select>
       </div>

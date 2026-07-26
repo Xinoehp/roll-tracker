@@ -2,7 +2,7 @@ import { Component, inject, signal, computed, effect } from '@angular/core';
 import { DecimalPipe, PercentPipe } from '@angular/common';
 import { SessionStateService } from '../../../tracker/services/session-state.service';
 import { StatsService, RollStats } from '../../services/stats.service';
-import { DatabaseService, Player } from '../../../../core/db/database.service';
+import { DatabaseService, Player, Roll, Session } from '../../../../core/db/database.service';
 import { RollDistributionChartComponent } from '../roll-distribution-chart/roll-distribution-chart.component';
 import { CampaignTrendChartComponent } from '../campaign-trend-chart/campaign-trend-chart.component';
 
@@ -32,6 +32,11 @@ export class AnalyticsDashboardComponent {
   public readonly campaignOverviewStats = signal<RollStats | null>(null);
   public readonly isLoadingCampaignStats = signal<boolean>(false);
 
+  // Rolls cache for distribution chart across scopes
+  public readonly campaignRolls = signal<Roll[]>([]);
+  public readonly globalRolls = signal<Roll[]>([]);
+  public readonly globalPlayerCharMap = signal<Record<number, number[]>>({});
+
   // Global scope player listing
   public readonly globalPlayers = signal<Player[]>([]);
 
@@ -45,7 +50,7 @@ export class AnalyticsDashboardComponent {
       this.state.rolls();
       const campaign = this.state.activeCampaign();
       const scope = this.statsScope();
-      
+
       if (scope === 'campaign' && campaign) {
         await this.loadCampaignStats();
       } else if (scope === 'global') {
@@ -56,6 +61,7 @@ export class AnalyticsDashboardComponent {
 
   public async setScope(scope: 'session' | 'campaign' | 'global') {
     this.statsScope.set(scope);
+    this.selectedCharacterForDistribution.set(undefined);
     if (scope === 'campaign') {
       await this.loadCampaignStats();
     } else if (scope === 'global') {
@@ -65,7 +71,10 @@ export class AnalyticsDashboardComponent {
 
   private async loadCampaignStats() {
     const campaign = this.state.activeCampaign();
-    if (!campaign || !campaign.id) return;
+    if (!campaign || !campaign.id) {
+      this.campaignRolls.set([]);
+      return;
+    }
 
     this.isLoadingCampaignStats.set(true);
     try {
@@ -81,6 +90,16 @@ export class AnalyticsDashboardComponent {
         }
       }
       this.playerCampaignStats.set(playerStatsRecord);
+
+      // 3. Load all campaign rolls for distribution chart
+      const sessions = await this.db.sessions.where('campaignId').equals(campaign.id).toArray();
+      const sessionIds = sessions.map((s: Session) => s.id).filter((id?: number): id is number => id !== undefined);
+      if (sessionIds.length > 0) {
+        const rollsList = await this.db.rolls.where('sessionId').anyOf(sessionIds).toArray();
+        this.campaignRolls.set(rollsList);
+      } else {
+        this.campaignRolls.set([]);
+      }
     } catch (e) {
       console.error('Error loading campaign stats:', e);
     } finally {
@@ -95,17 +114,27 @@ export class AnalyticsDashboardComponent {
       const overview = await this.stats.getGlobalOverviewStats();
       this.campaignOverviewStats.set(overview);
 
-      // 2. Load players and their global combined stats
+      // 2. Load players and their global combined stats & character ID mapping
       const players = await this.db.players.toArray();
       this.globalPlayers.set(players);
 
+      const allCharacters = await this.db.characters.toArray();
+      const playerCharMapRecord: Record<number, number[]> = {};
       const playerStatsRecord: Record<number, RollStats> = {};
+
       for (const p of players) {
         if (p.id !== undefined) {
           playerStatsRecord[p.id] = await this.stats.getPlayerGlobalStats(p.id);
+          const charIds = allCharacters.filter(c => c.playerId === p.id && c.id !== undefined).map(c => c.id!);
+          playerCharMapRecord[p.id] = charIds;
         }
       }
       this.playerCampaignStats.set(playerStatsRecord);
+      this.globalPlayerCharMap.set(playerCharMapRecord);
+
+      // 3. Load all global rolls for distribution chart
+      const rollsList = await this.db.rolls.toArray();
+      this.globalRolls.set(rollsList);
     } catch (e) {
       console.error('Error loading global stats:', e);
     } finally {
@@ -122,22 +151,52 @@ export class AnalyticsDashboardComponent {
     }
   });
 
-  // Computed rolls array for distribution chart
+  // Computed rolls array for distribution chart respecting scope & player selection
   public readonly distributionRolls = computed<number[]>(() => {
-    const selectedCharId = this.selectedCharacterForDistribution();
-    const rolls = this.state.rolls();
-    if (selectedCharId !== undefined) {
-      return rolls.filter(r => r.characterId === selectedCharId).map(r => r.value);
+    const scope = this.statsScope();
+    const selectedId = this.selectedCharacterForDistribution();
+
+    let targetRolls: Roll[];
+
+    if (scope === 'session') {
+      targetRolls = this.state.rolls();
+      if (selectedId !== undefined) {
+        targetRolls = targetRolls.filter(r => r.characterId === selectedId);
+      }
+    } else if (scope === 'campaign') {
+      targetRolls = this.campaignRolls();
+      if (selectedId !== undefined) {
+        targetRolls = targetRolls.filter(r => r.characterId === selectedId);
+      }
+    } else {
+      targetRolls = this.globalRolls();
+      if (selectedId !== undefined) {
+        const charIdsForPlayer = new Set(this.globalPlayerCharMap()[selectedId] || []);
+        targetRolls = targetRolls.filter(r => charIdsForPlayer.has(r.characterId));
+      }
     }
-    return rolls.map(r => r.value);
+
+    return targetRolls.map(r => r.value);
   });
 
   public readonly distributionLabel = computed<string>(() => {
-    const selectedCharId = this.selectedCharacterForDistribution();
-    if (selectedCharId === undefined) return 'Overall Group';
-    const char = this.state.activeCharacters().find(c => c.id === selectedCharId);
-    if (!char) return 'Selected Character';
-    return char.isDM ? 'Our Dungeon Master' : (char.name || char.playerName || 'Selected Character');
+    const scope = this.statsScope();
+    const selectedId = this.selectedCharacterForDistribution();
+
+    if (selectedId === undefined) {
+      if (scope === 'session') return 'Current Session (Group Overall)';
+      if (scope === 'campaign') return 'Entire Campaign (Group Overall)';
+      return 'All Campaigns (Global Overall)';
+    }
+
+    if (scope === 'global') {
+      const player = this.globalPlayers().find(p => p.id === selectedId);
+      return player ? player.name : 'Selected Player';
+    } else {
+      const char = this.state.activeCharacters().find(c => c.id === selectedId);
+      if (!char) return 'Selected Character';
+      return char.isDM ? 'Our Dungeon Master' : (char.name || char.playerName || 'Selected Character');
+    }
   });
 
   // Reactive computed list for standings with sorting applied
@@ -175,7 +234,7 @@ export class AnalyticsDashboardComponent {
       // Global Scope (aggregated players across all campaigns)
       const playersList = this.globalPlayers();
       const campStats = this.playerCampaignStats();
-      
+
       // Look up colors/DM tags from characters list
       const chars = this.state.activeCharacters();
 
