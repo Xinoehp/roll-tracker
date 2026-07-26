@@ -10,6 +10,7 @@ import { SettingsViewComponent } from './features/settings/components/settings-v
 import { SessionDialogComponent } from './features/tracker/components/session-dialog/session-dialog.component';
 import { CharacterDialogComponent } from './features/tracker/components/character-dialog/character-dialog.component';
 import { CampaignDialogComponent } from './features/tracker/components/campaign-dialog/campaign-dialog.component';
+import { SidebarComponent } from './features/tracker/components/sidebar/sidebar.component';
 import {
   getRandomSessionIntro,
   getRandomSessionOutro,
@@ -28,6 +29,7 @@ export interface SharedRecapPayload {
 @Component({
   selector: 'app-root',
   imports: [
+    SidebarComponent,
     RollEntryNumpadComponent,
     AnalyticsDashboardComponent,
     RecentRollsFeedComponent,

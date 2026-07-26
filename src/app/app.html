@@ -10,12 +10,8 @@
   </header>
   <main class="shared-page-content">
     @if (sharedRecapData(); as data) {
-      <app-session-recap-view
-        [campaignName]="data.c || ''"
-        [sessionName]="data.s || ''"
-        [sessionDate]="data.d || ''"
-        [recapText]="data.r || ''"
-        [playersData]="sharedPlayers()" />
+    <app-session-recap-view [campaignName]="data.c || ''" [sessionName]="data.s || ''" [sessionDate]="data.d || ''"
+      [recapText]="data.r || ''" [playersData]="sharedPlayers()" />
     }
   </main>
 </div>
@@ -24,114 +20,16 @@
 <div class="app-container" [style.grid-template-columns]="sidebarWidth() + 'px auto 1fr'">
 
   <!-- Sidebar Panel -->
-  <aside class="app-sidebar">
-    <div class="sidebar-header">
-      <img class="logo-img" src="logo.jpg" alt="Roll Stats Logo" />
-      <h1>Roll Stats</h1>
-    </div>
-
-    <!-- Campaigns Section -->
-    <div class="sidebar-section">
-      <div class="section-title-row">
-        <h3>Campaigns</h3>
-        <button class="add-small-btn" (click)="showCampaignForm.set(true)" title="Add Campaign">+</button>
-      </div>
-      <div class="select-container">
-        <select [value]="state.activeCampaign()?.id || ''" (change)="selectCampaignById(+$any($event.target).value)">
-          @for (camp of campaignsList(); track camp.id) {
-          <option [value]="camp.id" [selected]="state.activeCampaign()?.id === camp.id">
-            {{ camp.name }}
-          </option>
-          }
-        </select>
-      </div>
-    </div>
-
-    <!-- Sessions Section -->
-    <div class="sidebar-section">
-      <div class="section-title-row">
-        <h3>Sessions</h3>
-        <button class="add-small-btn" (click)="showSessionForm.set(true)" title="Create Session">+</button>
-      </div>
-      <div class="scroll-list">
-        @if (sessionsList().length === 0) {
-        <div class="empty-list-text">No sessions. Click + to add.</div>
-        } @else {
-        @for (sess of sessionsList(); track sess.id) {
-        <div class="session-list-item-wrapper" [class.active]="state.activeSession()?.id === sess.id">
-          <button class="list-item" (click)="selectSession(sess)">
-            <div class="list-item-content">
-              <span class="sess-title">{{ sess.name }}</span>
-              <span class="sess-date">{{ sess.date }}</span>
-            </div>
-          </button>
-          <div class="session-actions-row">
-            <button class="edit-item-small-btn" (click)="openEditSessionModal(sess, $event)" title="Edit Session Details">✏️</button>
-            <button class="delete-item-btn" (click)="handleDeleteSession(sess, $event)" title="Delete Session">🗑️</button>
-          </div>
-        </div>
-        }
-        }
-      </div>
-    </div>
-
-    <!-- Players Management Section -->
-    <div class="sidebar-section players-section">
-      <div class="section-title-row">
-        <h3>Campaign Players</h3>
-        <button class="add-small-btn" (click)="showPlayerForm.set(true)" title="Add Player">+</button>
-      </div>
-      <div class="scroll-list players-list">
-        @if (state.activeCharacters().length === 0) {
-        <div class="empty-list-text">No players. Click + to add.</div>
-        } @else {
-        @for (player of state.activeCharacters(); track player.id) {
-        <div class="player-list-item" [class.inactive-player-row]="!player.isActive">
-          <div class="player-info">
-            <span class="player-indicator-dot" [style.background-color]="player.color"></span>
-            <span class="player-name">
-              @if (player.isDM) { 👑 }
-              {{ player.playerName }}
-              @if (player.name && player.name !== player.playerName) {
-              <span class="player-char-name">({{ player.name }})</span>
-              }
-            </span>
-          </div>
-          <div class="player-actions-row">
-            <button class="toggle-active-btn" (click)="toggleCharacterActive(player.id!, $event)"
-              [title]="player.isActive ? 'Hide Player from Numpad' : 'Show Player on Numpad'">
-              {{ player.isActive ? '👁️' : '🙈' }}
-            </button>
-            <button class="edit-item-small-btn" (click)="openEditPlayerForm(player, $event)"
-              title="Edit Player Details">
-              ✏️
-            </button>
-            @if (state.activeCharacters().length > 1) {
-            <button class="delete-item-btn" (click)="handleRemovePlayer(player.id!, $event)"
-              title="Remove Player from Campaign">
-              ×
-            </button>
-            }
-          </div>
-        </div>
-        }
-        }
-      </div>
-    </div>
-
-    <!-- Sidebar Footer (Backup & Restore) -->
-    <div class="sidebar-footer">
-      <button class="sidebar-footer-btn" (click)="exportDatabase()"
-        title="Export all campaigns, players, and rolls to a JSON backup file">
-        💾 Backup Data
-      </button>
-      <button class="sidebar-footer-btn" (click)="restoreFileInput.click()"
-        title="Restore database from a previously exported JSON backup file">
-        📂 Restore Backup
-      </button>
-      <input #restoreFileInput type="file" style="display: none" accept=".json" (change)="importDatabase($event)" />
-    </div>
-  </aside>
+  <app-sidebar [campaigns]="campaignsList()" [activeCampaign]="state.activeCampaign()" [sessions]="sessionsList()"
+    [activeSession]="state.activeSession()" [characters]="state.activeCharacters()"
+    (createCampaign)="showCampaignForm.set(true)" (selectCampaign)="selectCampaignById($event)"
+    (createSession)="showSessionForm.set(true)" (selectSession)="selectSession($event)"
+    (editSession)="openEditSessionModal($event.session, $event.event)"
+    (deleteSession)="handleDeleteSession($event.session, $event.event)" (addCharacter)="showPlayerForm.set(true)"
+    (editCharacter)="openEditPlayerForm($event.character, $event.event)"
+    (toggleCharacterActive)="toggleCharacterActive($event.characterId, $event.event)"
+    (removeCharacter)="handleRemovePlayer($event.characterId, $event.event)" (exportBackup)="exportDatabase()"
+    (importBackup)="importDatabase($event)" />
 
   <!-- Sidebar Resizer Handle -->
   <div class="sidebar-resizer" (mousedown)="startResizing($event)"></div>
@@ -217,9 +115,9 @@
             <div class="config-section">
               <h4>👥 Present Players</h4>
               @if (hasHiddenPlayers()) {
-                <div class="recap-hidden-players-hint">
-                  💡 Inactive campaign players are hidden. Toggle visibility in the sidebar to include them.
-                </div>
+              <div class="recap-hidden-players-hint">
+                💡 Inactive campaign players are hidden. Toggle visibility in the sidebar to include them.
+              </div>
               }
               <div class="attendance-grid">
                 @for (char of activeRecapCharacters(); track char.id) {
@@ -252,7 +150,8 @@
                       <input type="checkbox" [checked]="(recapSelectedHighlights()[char.id!] || []).includes(h.id)"
                         (change)="toggleRecapHighlight(char.id!, h.id)" />
                       <span class="highlight-emoji">{{ h.emoji }}</span>
-                      <span class="highlight-label-text">{{ h.label }} <small style="opacity: 0.7; font-size: 0.85em">({{ h.formattedPct }})</small></span>
+                      <span class="highlight-label-text">{{ h.label }} <small
+                          style="opacity: 0.7; font-size: 0.85em">({{ h.formattedPct }})</small></span>
                     </label>
                     }
                     @if ((recapAvailableHighlights()[char.id!] || []).length === 0) {
@@ -288,84 +187,70 @@
       }
 
       @if (activeTab() === 'settings') {
-        <app-settings-view></app-settings-view>
+      <app-settings-view></app-settings-view>
       }
     </section>
 
     <!-- Global App Bottom Bar -->
     <footer class="app-bottom-bar">
       @if (activeTab() === 'recap') {
-        <div class="recap-bar-content">
-          <div class="actions-left">
-            <button class="btn btn-secondary btn-small" (click)="copyRawStatsForLLM()" title="Copy Markdown stats payload to clipboard">
-              📋 Copy Raw Stats
-            </button>
-            <button class="btn btn-secondary btn-small" (click)="copyCompiledRecapText()" title="Copy narrative text only">
-              ✍️ Copy Text Recap
-            </button>
-            @if (recapAlertMessage()) {
-              <span class="recap-toast-msg">{{ recapAlertMessage() }}</span>
-            }
-          </div>
-          <div class="actions-right">
-            <button class="btn btn-primary btn-small" (click)="generateShareLink()" title="Generate compressed web URL and copy to clipboard">
-              🔗 Generate Share Link
-            </button>
-          </div>
+      <div class="recap-bar-content">
+        <div class="actions-left">
+          <button class="btn btn-secondary btn-small" (click)="copyRawStatsForLLM()"
+            title="Copy Markdown stats payload to clipboard">
+            📋 Copy Raw Stats
+          </button>
+          <button class="btn btn-secondary btn-small" (click)="copyCompiledRecapText()"
+            title="Copy narrative text only">
+            ✍️ Copy Text Recap
+          </button>
+          @if (recapAlertMessage()) {
+          <span class="recap-toast-msg">{{ recapAlertMessage() }}</span>
+          }
         </div>
+        <div class="actions-right">
+          <button class="btn btn-primary btn-small" (click)="generateShareLink()"
+            title="Generate compressed web URL and copy to clipboard">
+            🔗 Generate Share Link
+          </button>
+        </div>
+      </div>
       } @else {
-        <div class="bottom-bar-default-content">
-          <span class="version-text">Dice Tracker v1.2.0</span>
-        </div>
+      <div class="bottom-bar-default-content">
+        <span class="version-text">Dice Tracker v1.2.0</span>
+      </div>
       }
     </footer>
   </main>
 
   <!-- Add Campaign Modal -->
   @if (showCampaignForm()) {
-  <app-campaign-dialog
-    (save)="handleCreateCampaign($event)"
-    (cancelled)="showCampaignForm.set(false)" />
+  <app-campaign-dialog (save)="handleCreateCampaign($event)" (cancelled)="showCampaignForm.set(false)" />
   }
 
   <!-- Add Session Modal -->
   @if (showSessionForm()) {
-  <app-session-dialog
-    mode="create"
-    [sessionsCount]="sessionsList().length"
-    (save)="handleCreateSession($event)"
+  <app-session-dialog mode="create" [sessionsCount]="sessionsList().length" (save)="handleCreateSession($event)"
     (cancelled)="showSessionForm.set(false)" />
   }
 
   <!-- Edit Session Modal -->
   @if (state.showEditSessionModal()) {
-  <app-session-dialog
-    mode="edit"
-    [session]="state.activeSession()"
-    (save)="handleUpdateSession($event)"
-    (deleteSession)="handleDeleteSession()"
-    (cancelled)="state.showEditSessionModal.set(false)" />
+  <app-session-dialog mode="edit" [session]="state.activeSession()" (save)="handleUpdateSession($event)"
+    (deleteSession)="handleDeleteSession()" (cancelled)="state.showEditSessionModal.set(false)" />
   }
 
   <!-- Add Character Modal -->
   @if (showPlayerForm()) {
-  <app-character-dialog
-    mode="add"
-    [globalPlayers]="globalPlayers()"
-    (save)="handleAddPlayer($event)"
+  <app-character-dialog mode="add" [globalPlayers]="globalPlayers()" (save)="handleAddPlayer($event)"
     (cancelled)="showPlayerForm.set(false)" />
   }
 
   <!-- Edit Character Modal -->
   @if (showEditPlayerForm()) {
-  <app-character-dialog
-    mode="edit"
-    [character]="editingCharacter()"
-    (save)="handleUpdatePlayer($event)"
+  <app-character-dialog mode="edit" [character]="editingCharacter()" (save)="handleUpdatePlayer($event)"
     (cancelled)="showEditPlayerForm.set(false)" />
   }
-
-
 
 </div>
 }

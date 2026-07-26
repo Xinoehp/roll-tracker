@@ -219,7 +219,7 @@ describe('App', () => {
 
   it('should toggle keyboard shortcuts setting and persist state in localStorage', () => {
     const settingsService = TestBed.inject(SettingsService);
-    
+
     settingsService.setKeyboardShortcuts(true);
     expect(settingsService.keyboardShortcutsEnabled()).toBe(true);
     expect(localStorage.getItem('keyboard_shortcuts_enabled')).toBe('true');
