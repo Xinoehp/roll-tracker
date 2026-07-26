@@ -265,13 +265,12 @@ describe('App', () => {
 
     const sess = app.sessionsList()[0];
     app.openEditSessionModal(sess);
-    expect(app.editSessionName()).toBe(sess.name);
 
-    app.editSessionName.set('Renamed Session 1');
-    await app.handleUpdateSession();
+    await app.handleUpdateSession({ name: 'Renamed Session 1', date: sess.date, notes: 'Updated notes' });
 
     const updatedInDb = await db.sessions.get(sess.id!);
     expect(updatedInDb?.name).toBe('Renamed Session 1');
+    expect(updatedInDb?.notes).toBe('Updated notes');
   });
 
   it('should support deleting a session and its recorded rolls in app', async () => {

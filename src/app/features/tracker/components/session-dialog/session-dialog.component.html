@@ -1,0 +1,74 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <h3>{{ mode() === 'create' ? 'Create New Session' : 'Edit Session Details' }}</h3>
+
+    <form (ngSubmit)="onSave()">
+      <div class="form-group">
+        <label for="session-name">Session Name</label>
+        <input
+          id="session-name"
+          type="text"
+          placeholder="e.g., Session 1"
+          [(ngModel)]="name"
+          name="name"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="session-date">Session Date</label>
+        <input
+          id="session-date"
+          type="date"
+          [(ngModel)]="date"
+          name="date"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="session-notes">Session Notes</label>
+        <textarea
+          id="session-notes"
+          rows="3"
+          placeholder="Optional notes or summary..."
+          [(ngModel)]="notes"
+          name="notes"
+        ></textarea>
+      </div>
+
+      @if (mode() === 'edit') {
+        <div class="modal-actions-split">
+          <button type="button" class="btn-danger-link" (click)="onDelete()">
+            🗑️ Delete Session
+          </button>
+          <div class="modal-actions-right">
+            <button type="button" class="btn btn-secondary" (click)="onCancel()">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="!name().trim() || !date().trim()"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="!name().trim() || !date().trim()"
+          >
+            Add Session
+          </button>
+        </div>
+      }
+    </form>
+  </div>
+</div>

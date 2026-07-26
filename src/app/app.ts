@@ -7,6 +7,9 @@ import { RecentRollsFeedComponent } from './features/tracker/components/recent-r
 import { SessionRecapViewComponent, RecapPlayerData } from './features/recap/components/session-recap-view/session-recap-view';
 import { RecapService, StatHighlight } from './features/recap/services/recap.service';
 import { SettingsViewComponent } from './features/settings/components/settings-view/settings-view';
+import { SessionDialogComponent } from './features/tracker/components/session-dialog/session-dialog.component';
+import { CharacterDialogComponent } from './features/tracker/components/character-dialog/character-dialog.component';
+import { CampaignDialogComponent } from './features/tracker/components/campaign-dialog/campaign-dialog.component';
 import {
   getRandomSessionIntro,
   getRandomSessionOutro,
@@ -22,6 +25,9 @@ import {
     RecentRollsFeedComponent,
     SessionRecapViewComponent,
     SettingsViewComponent,
+    SessionDialogComponent,
+    CharacterDialogComponent,
+    CampaignDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -61,45 +67,11 @@ export class App implements OnInit {
   showCampaignForm = signal<boolean>(false);
   showSessionForm = signal<boolean>(false);
   showPlayerForm = signal<boolean>(false);
-
-  // Form input bindings (simple string signals)
-  newCampaignName = signal<string>('');
-  newCampaignDesc = signal<string>('');
-  newSessionName = signal<string>('');
-  newSessionDate = signal<string>('');
-  newPlayerName = signal<string>('');
-  newPlayerColor = signal<string>('#3b82f6'); // Default Blue
-  newPlayerCharName = signal<string>('');
-  newPlayerIsDM = signal<boolean>(false);
+  showEditPlayerForm = signal<boolean>(false);
+  editingCharacter = signal<Character | null>(null);
 
   // Dropdown player select bindings
   globalPlayers = signal<Player[]>([]);
-  selectedPlayerId = signal<string>('new');
-
-  // Edit player form bindings
-  showEditPlayerForm = signal<boolean>(false);
-  editingPlayerId = signal<number | null>(null);
-  editPlayerName = signal<string>('');
-  editPlayerCharName = signal<string>('');
-  editPlayerColor = signal<string>('');
-  editPlayerIsDM = signal<boolean>(false);
-
-  // Edit session form bindings
-  editSessionName = signal<string>('');
-  editSessionDate = signal<string>('');
-  editSessionNotes = signal<string>('');
-
-  // Colors list for player creation
-  readonly presetColors = [
-    '#f59e0b', // Amber
-    '#ef4444', // Red
-    '#3b82f6', // Blue
-    '#10b981', // Emerald
-    '#ec4899', // Pink
-    '#8b5cf6', // Purple
-    '#06b6d4', // Cyan
-    '#f97316', // Orange
-  ];
 
   constructor() {
     // Automatically load the sessions list when the active campaign changes
@@ -109,18 +81,6 @@ export class App implements OnInit {
         await this.loadSessionsForCampaign(activeCamp.id);
       } else {
         this.sessionsList.set([]);
-      }
-    });
-
-    // Populate edit session form when state triggers edit modal
-    effect(() => {
-      if (this.state.showEditSessionModal()) {
-        const session = this.state.activeSession();
-        if (session) {
-          this.editSessionName.set(session.name);
-          this.editSessionDate.set(session.date);
-          this.editSessionNotes.set(session.notes || '');
-        }
       }
     });
 
@@ -141,8 +101,6 @@ export class App implements OnInit {
   async ngOnInit() {
     await this.refreshCampaigns();
     await this.loadGlobalPlayers();
-    // Default form date to today
-    this.newSessionDate.set(new Date().toISOString().split('T')[0]);
 
     // Check for sharing URL query param "?share="
     const urlParams = new URLSearchParams(window.location.search);
@@ -195,78 +153,81 @@ export class App implements OnInit {
     await this.state.setSession(session);
   }
 
-  // Create Campaign
-  async handleCreateCampaign() {
-    const name = this.newCampaignName().trim();
-    if (!name) return;
+  // Create Campaign handler from CampaignDialogComponent
+  async handleCreateCampaign(data: { name: string; description: string }) {
+    if (!data.name.trim()) return;
 
-    const newCamp = await this.state.createCampaign(name, this.newCampaignDesc().trim());
+    await this.state.createCampaign(data.name.trim(), data.description.trim());
     await this.refreshCampaigns();
-
-    // Clear inputs and hide form
-    this.newCampaignName.set('');
-    this.newCampaignDesc.set('');
     this.showCampaignForm.set(false);
+    this.showTransientMessage(`Campaign "${data.name}" created! ✅`);
   }
 
-  // Open New Session Form with auto-numbering
+  // Open New Session Form
   openNewSessionForm() {
-    const nextNum = this.sessionsList().length + 1;
-    this.newSessionName.set(`Session ${nextNum}`);
-    this.newSessionDate.set(new Date().toISOString().split('T')[0]);
     this.showSessionForm.set(true);
   }
 
-  // Create Session
-  async handleCreateSession() {
-    const name = this.newSessionName().trim();
-    const date = this.newSessionDate().trim();
-    if (!name || !date) return;
-
+  // Create Session handler from SessionDialogComponent
+  async handleCreateSession(data: { name: string; date: string; notes: string }) {
     const activeCamp = this.state.activeCampaign();
     if (!activeCamp || activeCamp.id === undefined) return;
 
-    await this.state.createSession(name, date);
+    await this.state.createSession(data.name.trim(), data.date.trim(), data.notes.trim());
     await this.loadSessionsForCampaign(activeCamp.id);
-
-    // Clear inputs and hide form
-    this.newSessionName.set('');
-    this.newSessionDate.set(new Date().toISOString().split('T')[0]);
     this.showSessionForm.set(false);
+    this.showTransientMessage(`Session "${data.name}" created! ✅`);
   }
 
   // Open edit modal for a session
   openEditSessionModal(session: Session, event?: Event) {
     if (event) event.stopPropagation();
     this.state.activeSession.set(session);
-    this.editSessionName.set(session.name);
-    this.editSessionDate.set(session.date);
-    this.editSessionNotes.set(session.notes || '');
     this.state.showEditSessionModal.set(true);
   }
 
-  // Delete a session and its associated rolls
-  async handleDeleteSession(session: Session, event?: Event) {
-    if (event) event.stopPropagation();
+  // Save session edits handler from SessionDialogComponent
+  async handleUpdateSession(data: { name: string; date: string; notes: string }) {
+    const session = this.state.activeSession();
     if (!session || !session.id) return;
 
-    const confirmMsg = `Are you sure you want to delete session "${session.name}"? All rolls recorded in this session will be permanently deleted.`;
-    if (!confirm(confirmMsg)) return;
+    const updatedSession: Session = {
+      ...session,
+      name: data.name.trim(),
+      date: data.date.trim(),
+      notes: data.notes.trim(),
+    };
 
-    // 1. Delete all rolls matching this session
-    await this.db.rolls.where('sessionId').equals(session.id).delete();
+    await this.db.sessions.put(updatedSession);
+    this.state.activeSession.set(updatedSession);
 
-    // 2. Delete the session
-    await this.db.sessions.delete(session.id);
-
-    // 3. Refresh session list
     const activeCamp = this.state.activeCampaign();
     if (activeCamp && activeCamp.id !== undefined) {
       await this.loadSessionsForCampaign(activeCamp.id);
     }
 
-    // 4. Update active session selection
-    if (this.state.activeSession()?.id === session.id) {
+    this.state.showEditSessionModal.set(false);
+    this.showTransientMessage(`Session details updated.`);
+  }
+
+  // Delete a session and its associated rolls
+  async handleDeleteSession(session?: Session | null, event?: Event) {
+    if (event) event.stopPropagation();
+    const targetSession = session || this.state.activeSession();
+    if (!targetSession || !targetSession.id) return;
+
+    const confirmMsg = `Are you sure you want to delete session "${targetSession.name}"? All rolls recorded in this session will be permanently deleted.`;
+    if (!confirm(confirmMsg)) return;
+
+    await this.db.rolls.where('sessionId').equals(targetSession.id).delete();
+    await this.db.sessions.delete(targetSession.id);
+
+    const activeCamp = this.state.activeCampaign();
+    if (activeCamp && activeCamp.id !== undefined) {
+      await this.loadSessionsForCampaign(activeCamp.id);
+    }
+
+    if (this.state.activeSession()?.id === targetSession.id) {
       const remaining = this.sessionsList();
       if (remaining.length > 0) {
         await this.selectSession(remaining[0]);
@@ -276,129 +237,59 @@ export class App implements OnInit {
       }
     }
 
-    // Close modal if open
     this.state.showEditSessionModal.set(false);
-    this.showTransientMessage(`Session "${session.name}" deleted.`);
+    this.showTransientMessage(`Session "${targetSession.name}" deleted.`);
   }
 
-  // Save session edits
-  async handleUpdateSession() {
-    const session = this.state.activeSession();
-    if (!session || !session.id) return;
-
-    const name = this.editSessionName().trim();
-    const date = this.editSessionDate().trim();
-    if (!name || !date) return;
-
-    const updatedSession: Session = {
-      ...session,
-      name,
-      date,
-      notes: this.editSessionNotes().trim(),
-    };
-
-    await this.db.sessions.put(updatedSession);
-    this.state.activeSession.set(updatedSession);
-
-    // Refresh the sidebar sessions list
-    const activeCamp = this.state.activeCampaign();
-    if (activeCamp && activeCamp.id !== undefined) {
-      await this.loadSessionsForCampaign(activeCamp.id);
+  // Add Character handler from CharacterDialogComponent
+  async handleAddPlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
+    let playerName = data.playerName;
+    if (data.selectedPlayerId !== 'new') {
+      const p = this.globalPlayers().find(pl => pl.id === parseInt(data.selectedPlayerId));
+      if (p) playerName = p.name;
     }
 
-    // Close the modal
-    this.state.showEditSessionModal.set(false);
-    this.showTransientMessage(`Session details updated.`);
-  }
-
-  // Add Character to campaign (with optional new player creation or existing selection)
-  async handleAddPlayer() {
-    const selectedId = this.selectedPlayerId();
-    const charName = this.newPlayerCharName().trim();
-    const color = this.newPlayerColor();
-    const isDM = this.newPlayerIsDM();
-
-    // Character name is required
-    if (!charName) return;
-
-    let playerName = '';
-    if (selectedId === 'new') {
-      playerName = this.newPlayerName().trim();
-      if (!playerName) return; // Player name required if creating new
-    } else {
-      const player = this.globalPlayers().find(p => p.id === parseInt(selectedId));
-      if (!player) return;
-      playerName = player.name;
-    }
-
-    await this.state.addCharacter(playerName, color, isDM, charName);
-    await this.loadGlobalPlayers(); // Refresh dropdown list
-
-    // Clear inputs and hide form
-    this.newPlayerName.set('');
-    this.newPlayerCharName.set('');
-    this.newPlayerIsDM.set(false);
-    this.newPlayerColor.set(this.presetColors[0]);
-    this.selectedPlayerId.set('new');
+    await this.state.addCharacter(playerName, data.color, data.isDM, data.characterName);
+    await this.loadGlobalPlayers();
     this.showPlayerForm.set(false);
+    this.showTransientMessage(`Character "${data.characterName}" added! ✅`);
   }
 
   // Open Edit Player Form
   openEditPlayerForm(player: Character, event: Event) {
-    event.stopPropagation(); // Avoid triggering parent item clicks
+    event.stopPropagation();
     if (!player.id) return;
-    this.editingPlayerId.set(player.id);
-    this.editPlayerName.set(player.name);
-    this.editPlayerCharName.set(player.name);
-    this.loadPlayerNameForEdit(player);
-
-    this.editPlayerColor.set(player.color);
-    this.editPlayerIsDM.set(!!player.isDM);
+    this.editingCharacter.set(player);
     this.showEditPlayerForm.set(true);
   }
 
-  private async loadPlayerNameForEdit(character: Character) {
-    const player = await this.db.players.get(character.playerId);
-    if (player) {
-      this.editPlayerName.set(player.name);
-      this.editPlayerCharName.set(character.name);
-    }
-  }
+  // Save Player edits handler from CharacterDialogComponent
+  async handleUpdatePlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
+    const character = this.editingCharacter();
+    if (!character || !character.id) return;
 
-  // Save Player edits
-  async handleUpdatePlayer() {
-    const characterId = this.editingPlayerId();
-    if (characterId === null) return;
+    const updatedChar: Character = {
+      ...character,
+      name: data.characterName,
+      color: data.color,
+      isDM: data.isDM,
+    };
 
-    const playerName = this.editPlayerName().trim();
-    const color = this.editPlayerColor();
-    const characterName = this.editPlayerCharName().trim();
-    const isDM = this.editPlayerIsDM();
-    if (!playerName || !characterName) return;
-
-    const character = await this.db.characters.get(characterId);
-    if (character) {
-      // 1. Update global Player name
+    if (data.playerName) {
       const player = await this.db.players.get(character.playerId);
-      if (player && player.name !== playerName) {
-        player.name = playerName;
+      if (player && player.name !== data.playerName) {
+        player.name = data.playerName;
         await this.db.players.put(player);
       }
-
-      // 2. Update campaign Character
-      const updatedChar: Character = {
-        ...character,
-        name: characterName,
-        color,
-        isDM,
-      };
-      await this.db.characters.put(updatedChar);
-      await this.state.refreshCharacters();
-      await this.loadGlobalPlayers(); // Sync dropdown
     }
 
+    await this.db.characters.put(updatedChar);
+    await this.state.refreshCharacters();
+    await this.loadGlobalPlayers();
+
     this.showEditPlayerForm.set(false);
-    this.editingPlayerId.set(null);
+    this.editingCharacter.set(null);
+    this.showTransientMessage(`Character updated.`);
   }
 
   // Toggle Character active/inactive status
@@ -416,10 +307,7 @@ export class App implements OnInit {
     }
   }
 
-  // Set selected player ID from dropdown
-  setSelectedPlayerId(e: Event) {
-    this.selectedPlayerId.set((e.target as HTMLSelectElement).value);
-  }
+
 
   // Recap State & Signals
   recapAvailableHighlights = signal<Record<number, StatHighlight[]>>({});
@@ -780,56 +668,7 @@ export class App implements OnInit {
     this.showTransientMessage('Share link copied! ✅');
   }
 
-  // Utility inputs setters
-  setNewCampaignName(e: Event) {
-    this.newCampaignName.set((e.target as HTMLInputElement).value);
-  }
-  setNewCampaignDesc(e: Event) {
-    this.newCampaignDesc.set((e.target as HTMLInputElement).value);
-  }
-  setNewSessionName(e: Event) {
-    this.newSessionName.set((e.target as HTMLInputElement).value);
-  }
-  setNewSessionDate(e: Event) {
-    this.newSessionDate.set((e.target as HTMLInputElement).value);
-  }
-  setNewPlayerName(e: Event) {
-    this.newPlayerName.set((e.target as HTMLInputElement).value);
-  }
-  setNewPlayerColor(color: string) {
-    this.newPlayerColor.set(color);
-  }
 
-  // Edit Session setters
-  setEditSessionName(e: Event) {
-    this.editSessionName.set((e.target as HTMLInputElement).value);
-  }
-  setEditSessionDate(e: Event) {
-    this.editSessionDate.set((e.target as HTMLInputElement).value);
-  }
-  setEditSessionNotes(e: Event) {
-    this.editSessionNotes.set((e.target as HTMLInputElement).value);
-  }
-
-  // Add/Edit Player setters
-  setNewPlayerCharName(e: Event) {
-    this.newPlayerCharName.set((e.target as HTMLInputElement).value);
-  }
-  setNewPlayerIsDM(e: Event) {
-    this.newPlayerIsDM.set((e.target as HTMLInputElement).checked);
-  }
-  setEditPlayerName(e: Event) {
-    this.editPlayerName.set((e.target as HTMLInputElement).value);
-  }
-  setEditPlayerCharName(e: Event) {
-    this.editPlayerCharName.set((e.target as HTMLInputElement).value);
-  }
-  setEditPlayerColor(color: string) {
-    this.editPlayerColor.set(color);
-  }
-  setEditPlayerIsDM(e: Event) {
-    this.editPlayerIsDM.set((e.target as HTMLInputElement).checked);
-  }
 
   // Backup entire database state to a JSON file
   async exportDatabase() {

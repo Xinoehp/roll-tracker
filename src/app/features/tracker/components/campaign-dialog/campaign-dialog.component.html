@@ -1,0 +1,40 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <h3>Create New Campaign</h3>
+
+    <div class="form-group">
+      <label for="campaign-name">Campaign Name</label>
+      <input
+        id="campaign-name"
+        type="text"
+        placeholder="e.g., Curse of Strahd"
+        [(ngModel)]="name"
+        (keydown.enter)="onSave()"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="campaign-description">Description</label>
+      <textarea
+        id="campaign-description"
+        placeholder="e.g., Friday night horror campaign"
+        [(ngModel)]="description"
+        rows="3"
+      ></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!name().trim()"
+        (click)="onSave()"
+      >
+        Create Campaign
+      </button>
+    </div>
+  </div>
+</div>

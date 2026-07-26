@@ -319,170 +319,46 @@
 
   <!-- Add Campaign Modal -->
   @if (showCampaignForm()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <h3>Create New Campaign</h3>
-      <div class="form-group">
-        <label>Campaign Name</label>
-        <input type="text" placeholder="e.g., Curse of Strahd" [value]="newCampaignName()"
-          (input)="setNewCampaignName($event)" />
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" placeholder="e.g., Friday night horror campaign" [value]="newCampaignDesc()"
-          (input)="setNewCampaignDesc($event)" />
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="showCampaignForm.set(false)">Cancel</button>
-        <button class="btn btn-primary" [disabled]="!newCampaignName().trim()"
-          (click)="handleCreateCampaign()">Create</button>
-      </div>
-    </div>
-  </div>
+  <app-campaign-dialog
+    (save)="handleCreateCampaign($event)"
+    (cancel)="showCampaignForm.set(false)" />
   }
 
   <!-- Add Session Modal -->
   @if (showSessionForm()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <h3>Create New Session</h3>
-      <div class="form-group">
-        <label>Session Name</label>
-        <input type="text" placeholder="e.g., Session 42" [value]="newSessionName()"
-          (input)="setNewSessionName($event)" />
-      </div>
-      <div class="form-group">
-        <label>Session Date</label>
-        <input type="date" [value]="newSessionDate()" (input)="setNewSessionDate($event)" />
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="showSessionForm.set(false)">Cancel</button>
-        <button class="btn btn-primary" [disabled]="!newSessionName().trim() || !newSessionDate().trim()"
-          (click)="handleCreateSession()">Add Session</button>
-      </div>
-    </div>
-  </div>
-  }
-
-  <!-- Add Character Modal -->
-  @if (showPlayerForm()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <h3>Add Character to Campaign</h3>
-
-      <div class="form-group">
-        <label>Assign to Player</label>
-        <select [value]="selectedPlayerId()" (change)="setSelectedPlayerId($event)" class="form-select">
-          <option value="new">+ Create New Player</option>
-          @for (player of globalPlayers(); track player.id) {
-          <option [value]="player.id">{{ player.name }}</option>
-          }
-        </select>
-      </div>
-
-      @if (selectedPlayerId() === 'new') {
-      <div class="form-group">
-        <label>New Player Name</label>
-        <input type="text" placeholder="e.g., Tom" [value]="newPlayerName()" (input)="setNewPlayerName($event)" />
-      </div>
-      }
-
-      <div class="form-group">
-        <label>Character Name (Required)</label>
-        <input type="text" placeholder="e.g., Aron (Fighter)" [value]="newPlayerCharName()"
-          (input)="setNewPlayerCharName($event)" />
-      </div>
-
-      <div class="form-group checkbox-group">
-        <label class="checkbox-label">
-          <input type="checkbox" [checked]="newPlayerIsDM()" (change)="setNewPlayerIsDM($event)" />
-          Is Dungeon Master (DM) 👑
-        </label>
-      </div>
-      <div class="form-group">
-        <label>Pick Theme Color</label>
-        <div class="color-picker-grid">
-          @for (color of presetColors; track color) {
-          <button type="button" class="color-dot-btn" [class.selected]="newPlayerColor() === color"
-            [style.background-color]="color" (click)="setNewPlayerColor(color)"></button>
-          }
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="showPlayerForm.set(false)">Cancel</button>
-        <button class="btn btn-primary"
-          [disabled]="!newPlayerCharName().trim() || (selectedPlayerId() === 'new' && !newPlayerName().trim())"
-          (click)="handleAddPlayer()">
-          Add Character
-        </button>
-      </div>
-    </div>
-  </div>
+  <app-session-dialog
+    mode="create"
+    [sessionsCount]="sessionsList().length"
+    (save)="handleCreateSession($event)"
+    (cancel)="showSessionForm.set(false)" />
   }
 
   <!-- Edit Session Modal -->
   @if (state.showEditSessionModal()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <h3>Edit Session Details</h3>
-      <div class="form-group">
-        <label>Session Name</label>
-        <input type="text" placeholder="e.g., Session 1" [value]="editSessionName()"
-          (input)="setEditSessionName($event)" />
-      </div>
-      <div class="form-group">
-        <label>Session Date</label>
-        <input type="date" [value]="editSessionDate()" (input)="setEditSessionDate($event)" />
-      </div>
-      <div class="form-group">
-        <label>Session Notes</label>
-        <textarea placeholder="Optional notes or summary..." [value]="editSessionNotes()"
-          (input)="setEditSessionNotes($event)" rows="3"></textarea>
-      </div>
-      <div class="modal-actions modal-actions-split">
-        <button class="btn btn-danger-link" (click)="handleDeleteSession(state.activeSession()!)">🗑️ Delete Session</button>
-        <div class="modal-actions-right">
-          <button class="btn btn-secondary" (click)="state.showEditSessionModal.set(false)">Cancel</button>
-          <button class="btn btn-primary" [disabled]="!editSessionName().trim() || !editSessionDate().trim()"
-            (click)="handleUpdateSession()">Save Changes</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <app-session-dialog
+    mode="edit"
+    [session]="state.activeSession()"
+    (save)="handleUpdateSession($event)"
+    (delete)="handleDeleteSession()"
+    (cancel)="state.showEditSessionModal.set(false)" />
   }
 
-  <!-- Edit Player Modal -->
+  <!-- Add Character Modal -->
+  @if (showPlayerForm()) {
+  <app-character-dialog
+    mode="add"
+    [globalPlayers]="globalPlayers()"
+    (save)="handleAddPlayer($event)"
+    (cancel)="showPlayerForm.set(false)" />
+  }
+
+  <!-- Edit Character Modal -->
   @if (showEditPlayerForm()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <h3>Edit Character Details</h3>
-      <div class="form-group">
-        <label>Character Name (Required)</label>
-        <input type="text" placeholder="e.g., Aron (Fighter)" [value]="editPlayerCharName()"
-          (input)="setEditPlayerCharName($event)" />
-      </div>
-      <div class="form-group checkbox-group">
-        <label class="checkbox-label">
-          <input type="checkbox" [checked]="editPlayerIsDM()" (change)="setEditPlayerIsDM($event)" />
-          Is Dungeon Master (DM) 👑
-        </label>
-      </div>
-      <div class="form-group">
-        <label>Theme Color</label>
-        <div class="color-picker-grid">
-          @for (color of presetColors; track color) {
-          <button type="button" class="color-dot-btn" [class.selected]="editPlayerColor() === color"
-            [style.background-color]="color" (click)="setEditPlayerColor(color)"></button>
-          }
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="showEditPlayerForm.set(false)">Cancel</button>
-        <button class="btn btn-primary" [disabled]="!editPlayerCharName().trim()" (click)="handleUpdatePlayer()">Save
-          Changes</button>
-      </div>
-    </div>
-  </div>
+  <app-character-dialog
+    mode="edit"
+    [character]="editingCharacter()"
+    (save)="handleUpdatePlayer($event)"
+    (cancel)="showEditPlayerForm.set(false)" />
   }
 
 

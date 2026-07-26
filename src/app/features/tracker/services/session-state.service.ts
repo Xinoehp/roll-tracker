@@ -130,7 +130,7 @@ export class SessionStateService {
     return newCampaign;
   }
 
-  async createSession(name: string, dateStr: string) {
+  async createSession(name: string, dateStr: string, notes: string = '') {
     const campaign = this.activeCampaign();
     if (!campaign || !campaign.id) throw new Error('No active campaign');
 
@@ -138,16 +138,19 @@ export class SessionStateService {
       campaignId: campaign.id,
       name,
       date: dateStr,
+      notes: notes || undefined,
       createdAt: new Date(dateStr),
     });
 
-    const newSession = {
+    const newSession: Session = {
       id,
       campaignId: campaign.id,
       name,
       date: dateStr,
+      notes,
       createdAt: new Date(dateStr),
     };
+
     await this.setSession(newSession);
     return newSession;
   }
