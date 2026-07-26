@@ -11,20 +11,20 @@ import { Character, Player } from '../../../../core/db/database.service';
   styleUrl: './character-dialog.component.css',
 })
 export class CharacterDialogComponent {
-  mode = input<'add' | 'edit'>('add');
-  character = input<Character | null>(null);
-  globalPlayers = input<Player[]>([]);
+  public readonly mode = input<'add' | 'edit'>('add');
+  public readonly character = input<Character | null>(null);
+  public readonly globalPlayers = input<Player[]>([]);
 
-  save = output<{
+  public readonly save = output<{
     playerName: string;
     characterName: string;
     color: string;
     isDM: boolean;
     selectedPlayerId: string;
   }>();
-  cancel = output<void>();
+  public readonly cancelled = output<void>();
 
-  readonly presetColors: string[] = [
+  public readonly presetColors: string[] = [
     '#f59e0b',
     '#ef4444',
     '#3b82f6',
@@ -35,13 +35,13 @@ export class CharacterDialogComponent {
     '#f97316',
   ];
 
-  selectedPlayerId = signal<string>('new');
-  newPlayerName = signal<string>('');
-  characterName = signal<string>('');
-  color = signal<string>('#3b82f6');
-  isDM = signal<boolean>(false);
+  public readonly selectedPlayerId = signal<string>('new');
+  public readonly newPlayerName = signal<string>('');
+  public readonly characterName = signal<string>('');
+  public readonly color = signal<string>('#3b82f6');
+  public readonly isDM = signal<boolean>(false);
 
-  constructor() {
+  public constructor() {
     effect(() => {
       const m = this.mode();
       const c = this.character();
@@ -60,11 +60,11 @@ export class CharacterDialogComponent {
     });
   }
 
-  selectColor(c: string): void {
+  public selectColor(c: string): void {
     this.color.set(c);
   }
 
-  onSave(): void {
+  public onSave(): void {
     const charName = this.characterName().trim();
     if (!charName) {
       return;
@@ -86,7 +86,7 @@ export class CharacterDialogComponent {
     });
   }
 
-  onCancel(): void {
-    this.cancel.emit();
+  public onCancel(): void {
+    this.cancelled.emit();
   }
 }

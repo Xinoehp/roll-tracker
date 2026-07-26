@@ -1,6 +1,6 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { SessionStateService } from '../../tracker/services/session-state.service';
-import { Roll, Character } from '../../../core/db/database.service';
+import { DatabaseService, Roll, Session, Character } from '../../../core/db/database.service';
 
 export interface RollStats {
   totalRolls: number;
@@ -19,14 +19,15 @@ export interface RollStats {
 })
 export class StatsService {
   private readonly state = inject(SessionStateService);
+  private readonly db = inject(DatabaseService);
 
   // Computed stats for the current session (all players combined)
-  readonly sessionStats = computed<RollStats>(() => {
+  public readonly sessionStats = computed<RollStats>(() => {
     return this.calculateStatsForRolls(this.state.rolls());
   });
 
   // Computed stats per character in the current session
-  readonly playerSessionStatsMap = computed<Map<number, RollStats>>(() => {
+  public readonly playerSessionStatsMap = computed<Map<number, RollStats>>(() => {
     const map = new Map<number, RollStats>();
     const allRolls = this.state.rolls();
     const charactersList = this.state.activeCharacters();
@@ -41,7 +42,7 @@ export class StatsService {
   });
 
   // Helper function to calculate stats for any array of rolls
-  calculateStatsForRolls(rollsList: Roll[]): RollStats {
+  public calculateStatsForRolls(rollsList: Roll[]): RollStats {
     const totalRolls = rollsList.length;
     if (totalRolls === 0) {
       return {
@@ -89,40 +90,38 @@ export class StatsService {
   }
 
   // Get cumulative stats across the entire active campaign
-  async getCampaignStats(): Promise<RollStats> {
+  public async getCampaignStats(): Promise<RollStats> {
     const campaign = this.state.activeCampaign();
     if (!campaign || !campaign.id) {
       return this.calculateStatsForRolls([]);
     }
 
-    const db = (this.state as any).db;
-    const sessions = await db.sessions.where('campaignId').equals(campaign.id).toArray();
-    const sessionIds = sessions.map((s: any) => s.id).filter((id: any) => id !== undefined);
+    const sessions = await this.db.sessions.where('campaignId').equals(campaign.id).toArray();
+    const sessionIds = sessions.map((s: Session) => s.id).filter((id?: number): id is number => id !== undefined);
 
     if (sessionIds.length === 0) {
       return this.calculateStatsForRolls([]);
     }
 
-    const rollsList = await db.rolls.where('sessionId').anyOf(sessionIds).toArray();
+    const rollsList = await this.db.rolls.where('sessionId').anyOf(sessionIds).toArray();
     return this.calculateStatsForRolls(rollsList);
   }
 
   // Get cumulative stats per character across the entire active campaign
-  async getCharacterCampaignStats(characterId: number): Promise<RollStats> {
+  public async getCharacterCampaignStats(characterId: number): Promise<RollStats> {
     const campaign = this.state.activeCampaign();
     if (!campaign || !campaign.id) {
       return this.calculateStatsForRolls([]);
     }
 
-    const db = (this.state as any).db;
-    const sessions = await db.sessions.where('campaignId').equals(campaign.id).toArray();
-    const sessionIds = sessions.map((s: any) => s.id).filter((id: any) => id !== undefined);
+    const sessions = await this.db.sessions.where('campaignId').equals(campaign.id).toArray();
+    const sessionIds = sessions.map((s: Session) => s.id).filter((id?: number): id is number => id !== undefined);
 
     if (sessionIds.length === 0) {
       return this.calculateStatsForRolls([]);
     }
 
-    const characterCampaignRolls = await db.rolls
+    const characterCampaignRolls = await this.db.rolls
       .where('characterId')
       .equals(characterId)
       .filter((roll: Roll) => sessionIds.includes(roll.sessionId))
@@ -132,23 +131,21 @@ export class StatsService {
   }
 
   // Get cumulative stats globally for a player across all campaigns
-  async getPlayerGlobalStats(playerId: number): Promise<RollStats> {
-    const db = (this.state as any).db;
-    const chars = await db.characters.where('playerId').equals(playerId).toArray();
-    const charIds = chars.map((c: any) => c.id).filter((id: any) => id !== undefined);
+  public async getPlayerGlobalStats(playerId: number): Promise<RollStats> {
+    const chars = await this.db.characters.where('playerId').equals(playerId).toArray();
+    const charIds = chars.map((c: Character) => c.id).filter((id?: number): id is number => id !== undefined);
 
     if (charIds.length === 0) {
       return this.calculateStatsForRolls([]);
     }
 
-    const rollsList = await db.rolls.where('characterId').anyOf(charIds).toArray();
+    const rollsList = await this.db.rolls.where('characterId').anyOf(charIds).toArray();
     return this.calculateStatsForRolls(rollsList);
   }
 
   // Get cumulative stats globally for all campaigns combined
-  async getGlobalOverviewStats(): Promise<RollStats> {
-    const db = (this.state as any).db;
-    const rollsList = await db.rolls.toArray();
+  public async getGlobalOverviewStats(): Promise<RollStats> {
+    const rollsList = await this.db.rolls.toArray();
     return this.calculateStatsForRolls(rollsList);
   }
 }

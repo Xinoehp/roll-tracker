@@ -10,13 +10,13 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './campaign-dialog.component.css',
 })
 export class CampaignDialogComponent {
-  readonly save = output<{ name: string; description: string }>();
-  readonly cancel = output<void>();
+  public readonly save = output<{ name: string; description: string }>();
+  public readonly cancelled = output<void>();
 
-  readonly name = signal<string>('');
-  readonly description = signal<string>('');
+  public readonly name = signal<string>('');
+  public readonly description = signal<string>('');
 
-  onSave(): void {
+  public onSave(): void {
     const trimmedName = this.name().trim();
     const trimmedDescription = this.description().trim();
 
@@ -28,7 +28,7 @@ export class CampaignDialogComponent {
     }
   }
 
-  onCancel(): void {
-    this.cancel.emit();
+  public onCancel(): void {
+    this.cancelled.emit();
   }
 }

@@ -41,7 +41,9 @@ describe('CharacterDialogComponent', () => {
   });
 
   it('should reset values in add mode by default', () => {
+    componentRef.setInput('globalPlayers', mockPlayers);
     expect(component.mode()).toBe('add');
+    expect(component.globalPlayers().length).toBe(2);
     expect(component.selectedPlayerId()).toBe('new');
     expect(component.newPlayerName()).toBe('');
     expect(component.characterName()).toBe('');
@@ -65,17 +67,17 @@ describe('CharacterDialogComponent', () => {
   });
 
   it('should emit cancel output on onCancel() call', () => {
-    let cancelled = false;
-    component.cancel.subscribe(() => {
-      cancelled = true;
+    let isCancelled = false;
+    component.cancelled.subscribe(() => {
+      isCancelled = true;
     });
 
     component.onCancel();
-    expect(cancelled).toBe(true);
+    expect(isCancelled).toBe(true);
   });
 
   it('should emit save output on onSave() when inputs are valid', () => {
-    let savedData: any = null;
+    let savedData: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string } | null = null;
     component.save.subscribe((data) => {
       savedData = data;
     });
@@ -98,7 +100,7 @@ describe('CharacterDialogComponent', () => {
   });
 
   it('should not emit save when characterName is empty', () => {
-    let savedData: any = null;
+    let savedData: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string } | null = null;
     component.save.subscribe((data) => {
       savedData = data;
     });

@@ -5,7 +5,7 @@ import { RollEntryNumpadComponent } from './features/tracker/components/roll-ent
 import { AnalyticsDashboardComponent } from './features/analytics/components/analytics-dashboard/analytics-dashboard';
 import { RecentRollsFeedComponent } from './features/tracker/components/recent-rolls-feed/recent-rolls-feed';
 import { SessionRecapViewComponent, RecapPlayerData } from './features/recap/components/session-recap-view/session-recap-view';
-import { RecapService, StatHighlight } from './features/recap/services/recap.service';
+import { RecapService, StatHighlight, SessionContext } from './features/recap/services/recap.service';
 import { SettingsViewComponent } from './features/settings/components/settings-view/settings-view';
 import { SessionDialogComponent } from './features/tracker/components/session-dialog/session-dialog.component';
 import { CharacterDialogComponent } from './features/tracker/components/character-dialog/character-dialog.component';
@@ -16,6 +16,14 @@ import {
   getRandomCampaignIntro,
   getRandomCampaignOutro,
 } from './features/recap/services/highlight-flavour';
+
+export interface SharedRecapPayload {
+  c?: string;
+  s?: string;
+  d?: string;
+  r?: string;
+  p?: { c?: string; dm?: boolean; st?: number[] }[];
+}
 
 @Component({
   selector: 'app-root',
@@ -34,16 +42,16 @@ import {
 })
 export class App implements OnInit {
   private readonly db = inject(DatabaseService);
-  readonly state = inject(SessionStateService);
+  public readonly state = inject(SessionStateService);
   private readonly recapService = inject(RecapService);
 
   // Shell navigation and sidebar state
-  activeTab = signal<'numpad' | 'analytics' | 'logs' | 'recap' | 'settings'>('numpad');
-  sidebarWidth = signal<number>(parseInt(localStorage.getItem('sidebar_width') || '260'));
-  campaignsList = signal<Campaign[]>([]);
-  sessionsList = signal<Session[]>([]);
+  public readonly activeTab = signal<'numpad' | 'analytics' | 'logs' | 'recap' | 'settings'>('numpad');
+  public readonly sidebarWidth = signal<number>(parseInt(localStorage.getItem('sidebar_width') || '260'));
+  public readonly campaignsList = signal<Campaign[]>([]);
+  public readonly sessionsList = signal<Session[]>([]);
 
-  startResizing(event: MouseEvent) {
+  public startResizing(event: MouseEvent) {
     event.preventDefault();
     const startX = event.clientX;
     const startWidth = this.sidebarWidth();
@@ -64,16 +72,16 @@ export class App implements OnInit {
   }
 
   // Modal / Form toggle states
-  showCampaignForm = signal<boolean>(false);
-  showSessionForm = signal<boolean>(false);
-  showPlayerForm = signal<boolean>(false);
-  showEditPlayerForm = signal<boolean>(false);
-  editingCharacter = signal<Character | null>(null);
+  public readonly showCampaignForm = signal<boolean>(false);
+  public readonly showSessionForm = signal<boolean>(false);
+  public readonly showPlayerForm = signal<boolean>(false);
+  public readonly showEditPlayerForm = signal<boolean>(false);
+  public readonly editingCharacter = signal<Character | null>(null);
 
   // Dropdown player select bindings
-  globalPlayers = signal<Player[]>([]);
+  public readonly globalPlayers = signal<Player[]>([]);
 
-  constructor() {
+  public constructor() {
     // Automatically load the sessions list when the active campaign changes
     effect(async () => {
       const activeCamp = this.state.activeCampaign();
@@ -88,9 +96,9 @@ export class App implements OnInit {
     effect(async () => {
       const tab = this.activeTab();
       const camp = this.state.activeCampaign();
-      const sess = this.state.activeSession();
       const type = this.recapType();
-      const chars = this.state.activeCharacters(); // tracks character visibility toggles in the sidebar
+      this.state.activeSession();
+      this.state.activeCharacters(); // tracks character visibility toggles in the sidebar
 
       if (tab === 'recap' && camp) {
         await this.loadRecapData(type);
@@ -98,7 +106,7 @@ export class App implements OnInit {
     });
   }
 
-  async ngOnInit() {
+  public async ngOnInit() {
     await this.refreshCampaigns();
     await this.loadGlobalPlayers();
 
@@ -119,19 +127,19 @@ export class App implements OnInit {
   }
 
   // Load all global players from database
-  async loadGlobalPlayers() {
+  public async loadGlobalPlayers() {
     const list = await this.db.players.toArray();
     this.globalPlayers.set(list);
   }
 
   // Load list of all campaigns
-  async refreshCampaigns() {
+  public async refreshCampaigns() {
     const list = await this.db.campaigns.orderBy('id').reverse().toArray();
     this.campaignsList.set(list);
   }
 
   // Load sessions for the active campaign
-  async loadSessionsForCampaign(campaignId: number) {
+  public async loadSessionsForCampaign(campaignId: number) {
     const list = await this.db.sessions
       .where('campaignId')
       .equals(campaignId)
@@ -141,7 +149,7 @@ export class App implements OnInit {
   }
 
   // Select campaign from sidebar by ID
-  async selectCampaignById(id: number) {
+  public async selectCampaignById(id: number) {
     const campaign = this.campaignsList().find(c => c.id === id);
     if (campaign) {
       await this.state.setCampaign(campaign);
@@ -149,12 +157,12 @@ export class App implements OnInit {
   }
 
   // Select session from sidebar
-  async selectSession(session: Session) {
+  public async selectSession(session: Session) {
     await this.state.setSession(session);
   }
 
   // Create Campaign handler from CampaignDialogComponent
-  async handleCreateCampaign(data: { name: string; description: string }) {
+  public async handleCreateCampaign(data: { name: string; description: string }) {
     if (!data.name.trim()) return;
 
     await this.state.createCampaign(data.name.trim(), data.description.trim());
@@ -164,12 +172,12 @@ export class App implements OnInit {
   }
 
   // Open New Session Form
-  openNewSessionForm() {
+  public openNewSessionForm() {
     this.showSessionForm.set(true);
   }
 
   // Create Session handler from SessionDialogComponent
-  async handleCreateSession(data: { name: string; date: string; notes: string }) {
+  public async handleCreateSession(data: { name: string; date: string; notes: string }) {
     const activeCamp = this.state.activeCampaign();
     if (!activeCamp || activeCamp.id === undefined) return;
 
@@ -180,14 +188,14 @@ export class App implements OnInit {
   }
 
   // Open edit modal for a session
-  openEditSessionModal(session: Session, event?: Event) {
+  public openEditSessionModal(session: Session, event?: Event) {
     if (event) event.stopPropagation();
     this.state.activeSession.set(session);
     this.state.showEditSessionModal.set(true);
   }
 
   // Save session edits handler from SessionDialogComponent
-  async handleUpdateSession(data: { name: string; date: string; notes: string }) {
+  public async handleUpdateSession(data: { name: string; date: string; notes: string }) {
     const session = this.state.activeSession();
     if (!session || !session.id) return;
 
@@ -211,7 +219,7 @@ export class App implements OnInit {
   }
 
   // Delete a session and its associated rolls
-  async handleDeleteSession(session?: Session | null, event?: Event) {
+  public async handleDeleteSession(session?: Session | null, event?: Event) {
     if (event) event.stopPropagation();
     const targetSession = session || this.state.activeSession();
     if (!targetSession || !targetSession.id) return;
@@ -242,7 +250,7 @@ export class App implements OnInit {
   }
 
   // Add Character handler from CharacterDialogComponent
-  async handleAddPlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
+  public async handleAddPlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
     let playerName = data.playerName;
     if (data.selectedPlayerId !== 'new') {
       const p = this.globalPlayers().find(pl => pl.id === parseInt(data.selectedPlayerId));
@@ -256,7 +264,7 @@ export class App implements OnInit {
   }
 
   // Open Edit Player Form
-  openEditPlayerForm(player: Character, event: Event) {
+  public openEditPlayerForm(player: Character, event: Event) {
     event.stopPropagation();
     if (!player.id) return;
     this.editingCharacter.set(player);
@@ -264,7 +272,7 @@ export class App implements OnInit {
   }
 
   // Save Player edits handler from CharacterDialogComponent
-  async handleUpdatePlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
+  public async handleUpdatePlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
     const character = this.editingCharacter();
     if (!character || !character.id) return;
 
@@ -293,13 +301,13 @@ export class App implements OnInit {
   }
 
   // Toggle Character active/inactive status
-  toggleCharacterActive(characterId: number, event: Event) {
+  public toggleCharacterActive(characterId: number, event: Event) {
     event.stopPropagation();
     this.state.toggleCharacterActive(characterId);
   }
 
   // Remove Player (Character)
-  async handleRemovePlayer(characterId: number, event: Event) {
+  public async handleRemovePlayer(characterId: number, event: Event) {
     event.stopPropagation(); // Avoid selecting the player card when clicking delete
     if (confirm('Are you sure you want to delete this player? This will erase all of their historical rolls!')) {
       await this.state.deleteCharacter(characterId);
@@ -310,39 +318,39 @@ export class App implements OnInit {
 
 
   // Recap State & Signals
-  recapAvailableHighlights = signal<Record<number, StatHighlight[]>>({});
-  recapSelectedHighlights = signal<Record<number, string[]>>({});
-  recapAttendance = signal<Record<number, boolean>>({});
-  recapType = signal<'session' | 'campaign'>('session');
-  sharedRecapData = signal<any | null>(null);
-  sharedPlayers = computed<RecapPlayerData[]>(() => {
+  public readonly recapAvailableHighlights = signal<Record<number, StatHighlight[]>>({});
+  public readonly recapSelectedHighlights = signal<Record<number, string[]>>({});
+  public readonly recapAttendance = signal<Record<number, boolean>>({});
+  public readonly recapType = signal<'session' | 'campaign'>('session');
+  public readonly sharedRecapData = signal<SharedRecapPayload | null>(null);
+  public readonly sharedPlayers = computed<RecapPlayerData[]>(() => {
     const data = this.sharedRecapData();
     if (!data || !data.p) return [];
-    return data.p.map((player: any) => {
+    return data.p.map((player) => {
       const charName = player.c || (player.dm ? 'Our Dungeon Master' : 'Adventurer');
       return {
         playerName: charName,
         characterName: charName,
         isDM: !!player.dm,
-        stats: player.st
+        stats: player.st || []
       };
     });
   });
-  recapAlertMessage = signal<string>('');
+  public readonly recapAlertMessage = signal<string>('');
 
-  recapCharactersList = signal<Character[]>([]);
-  recapCharacterRolls = signal<Record<number, number[]>>({});
+  public readonly recapCharactersList = signal<Character[]>([]);
+  public readonly recapCharacterRolls = signal<Record<number, number[]>>({});
 
-  activeRecapCharacters = computed(() => {
+  public readonly activeRecapCharacters = computed(() => {
     return this.recapCharactersList().filter(c => c.isActive);
   });
 
-  hasHiddenPlayers = computed(() => {
+  public readonly hasHiddenPlayers = computed(() => {
     return this.recapCharactersList().some(c => !c.isActive);
   });
 
-  private transientTimer: any = null;
-  showTransientMessage(msg: string) {
+  private transientTimer: ReturnType<typeof setTimeout> | null = null;
+  public showTransientMessage(msg: string) {
     if (this.transientTimer) {
       clearTimeout(this.transientTimer);
     }
@@ -353,11 +361,11 @@ export class App implements OnInit {
     }, 3000);
   }
 
-  setRecapType(type: 'session' | 'campaign') {
+  public setRecapType(type: 'session' | 'campaign') {
     this.recapType.set(type);
   }
 
-  async loadRecapData(type: 'session' | 'campaign') {
+  public async loadRecapData(type: 'session' | 'campaign') {
     const campaignId = this.state.activeCampaign()?.id;
     if (!campaignId) return;
 
@@ -412,76 +420,71 @@ export class App implements OnInit {
     this.recapCharactersList.set(characters);
 
     // Calculate averages and context for the RecapService
-    let highestAvg = -1;
-    let highestAvgPlayer = '';
-    let lowestAvg = 21;
-    let lowestAvgPlayer = '';
-    let mostRollsCount = 0;
-    let mostRollsPlayer = '';
+    // Generate Highlights and set default selections
+    const highlightsMap: Record<number, StatHighlight[]> = {};
+    const attendance: Record<number, boolean> = {};
+    const selected: Record<number, string[]> = {};
+
+    let totalRollsCount = 0;
+    const rollsCountMap: Record<number, number> = {};
 
     for (const char of characters) {
-      const charRolls = rollsMap[char.id!] || [];
-      const N = charRolls.length;
-      if (N > 0) {
-        const charSum = charRolls.reduce((a, b) => a + b, 0);
-        const charAvg = charSum / N;
-        if (charAvg > highestAvg) {
-          highestAvg = charAvg;
-          highestAvgPlayer = char.playerName || '';
-        }
-        if (charAvg < lowestAvg) {
-          lowestAvg = charAvg;
-          lowestAvgPlayer = char.playerName || '';
-        }
-        if (N > mostRollsCount) {
-          mostRollsCount = N;
-          mostRollsPlayer = char.playerName || '';
-        }
+      if (!char.id) continue;
+
+      let rVals: number[];
+
+      if (type === 'session') {
+        const sessId = this.state.activeSession()?.id;
+        if (!sessId) continue;
+        const rolls = await this.db.rolls.where('sessionId').equals(sessId).toArray();
+        rVals = rolls.filter(r => r.characterId === char.id).map(r => r.value);
+      } else {
+        const sessions = await this.db.sessions.where('campaignId').equals(campaignId).sortBy('date');
+        const sessIds = sessions.map(s => s.id!).filter(id => id !== undefined);
+
+        const allSessRolls = await this.db.rolls
+          .where('characterId')
+          .equals(char.id)
+          .filter(r => sessIds.includes(r.sessionId))
+          .toArray();
+
+        rVals = allSessRolls.map(r => r.value);
       }
+
+      rollsMap[char.id] = rVals;
+      rollsCountMap[char.id] = rVals.length;
+      totalRollsCount += rVals.length;
     }
 
-    const context = {
-      highestAvgPlayer,
-      lowestAvgPlayer,
-      highestAvg,
-      lowestAvg,
-      mostRollsPlayer,
-      mostRollsCount,
+    const sessContext: SessionContext = {
+      totalRollsInSession: totalRollsCount,
+      playerRollCounts: rollsCountMap,
     };
 
-    // Generate Highlights and set default selections
-    const available: Record<number, StatHighlight[]> = {};
-    const selected: Record<number, string[]> = {};
-    const attendance: Record<number, boolean> = {};
-
     for (const char of characters) {
-      const charRolls = rollsMap[char.id!] || [];
-      const charRollDates = rollDatesMap[char.id!];
-      const pHighlights = this.recapService.generateHighlights(
-        char.playerName || '',
+      if (!char.id) continue;
+      const rVals = rollsMap[char.id] || [];
+
+      const highlights = this.recapService.generateHighlights(
+        char.playerName || 'Player',
         char.name,
         !!char.isDM,
-        charRolls,
-        context,
-        type === 'campaign' ? charRollDates : undefined
+        rVals,
+        sessContext
       );
 
-      available[char.id!] = pHighlights;
-      attendance[char.id!] = charRolls.length > 0 || type === 'campaign'; // Default present if they rolled
-
-      if (pHighlights.length > 0) {
-        selected[char.id!] = [pHighlights[0].id];
-      } else {
-        selected[char.id!] = [];
-      }
+      highlightsMap[char.id] = highlights;
+      attendance[char.id] = true;
+      selected[char.id] = highlights.length > 0 ? [highlights[0].id] : [];
     }
 
-    this.recapAvailableHighlights.set(available);
+    this.recapCharacterRolls.set(rollsMap);
+    this.recapAvailableHighlights.set(highlightsMap);
     this.recapSelectedHighlights.set(selected);
     this.recapAttendance.set(attendance);
   }
 
-  toggleRecapAttendance(characterId: number) {
+  public toggleRecapAttendance(characterId: number) {
     const att = { ...this.recapAttendance() };
     att[characterId] = !att[characterId];
     this.recapAttendance.set(att);
@@ -496,7 +499,7 @@ export class App implements OnInit {
     }
   }
 
-  toggleRecapHighlight(characterId: number, highlightId: string) {
+  public toggleRecapHighlight(characterId: number, highlightId: string) {
     const selected = { ...this.recapSelectedHighlights() };
     const list = selected[characterId] ? [...selected[characterId]] : [];
     const idx = list.indexOf(highlightId);
@@ -509,7 +512,7 @@ export class App implements OnInit {
     this.recapSelectedHighlights.set(selected);
   }
 
-  getRecapPreviewData() {
+  public getRecapPreviewData() {
     const list: RecapPlayerData[] = [];
     const characters = this.activeRecapCharacters();
     const rollsMap = this.recapCharacterRolls();
@@ -538,10 +541,10 @@ export class App implements OnInit {
   }
 
   // Selected intro & outro text signals
-  recapIntro = signal<string>('');
-  recapOutro = signal<string>('');
+  public readonly recapIntro = signal<string>('');
+  public readonly recapOutro = signal<string>('');
 
-  rerollIntroOutro() {
+  public rerollIntroOutro() {
     const type = this.recapType();
     if (type === 'session') {
       this.recapIntro.set(getRandomSessionIntro());
@@ -552,7 +555,7 @@ export class App implements OnInit {
     }
   }
 
-  getCompiledRecapText(): string {
+  public getCompiledRecapText(): string {
     const lines: string[] = [];
     const type = this.recapType();
 
@@ -597,7 +600,7 @@ export class App implements OnInit {
     return lines.join('\n');
   }
 
-  copyRawStatsForLLM() {
+  public copyRawStatsForLLM() {
     const lines: string[] = [];
     const type = this.recapType();
     const campName = this.state.activeCampaign()?.name || 'Campaign';
@@ -634,12 +637,12 @@ export class App implements OnInit {
     this.showTransientMessage('Stats copied! ✅');
   }
 
-  copyCompiledRecapText() {
+  public copyCompiledRecapText() {
     navigator.clipboard.writeText(this.getCompiledRecapText());
     this.showTransientMessage('Recap copied! ✅');
   }
 
-  async generateShareLink() {
+  public async generateShareLink() {
     const type = this.recapType();
     const campName = this.state.activeCampaign()?.name || '';
     const sessName = type === 'session' ? (this.state.activeSession()?.name || '') : 'Campaign Summary';
@@ -671,7 +674,7 @@ export class App implements OnInit {
 
 
   // Backup entire database state to a JSON file
-  async exportDatabase() {
+  public async exportDatabase() {
     try {
       const campaigns = await this.db.campaigns.toArray();
       const players = await this.db.players.toArray();
@@ -707,7 +710,7 @@ export class App implements OnInit {
   }
 
   // Restore database state from a previously exported JSON backup file
-  async importDatabase(event: Event) {
+  public async importDatabase(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 

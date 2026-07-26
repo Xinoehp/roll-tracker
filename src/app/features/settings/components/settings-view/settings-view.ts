@@ -12,14 +12,14 @@ import { SettingsService } from '../../services/settings.service';
 })
 export class SettingsViewComponent {
   private readonly db = inject(DatabaseService);
-  readonly settings = inject(SettingsService);
+  public readonly settings = inject(SettingsService);
 
-  toggleShortcuts(event: Event) {
+  public toggleShortcuts(event: Event) {
     const input = event.target as HTMLInputElement;
     this.settings.setKeyboardShortcuts(input.checked);
   }
 
-  async clearAllData() {
+  public async clearAllData() {
     const confirmed = confirm(
       'WARNING: This will permanently delete all campaigns, players, characters, sessions, and rolls. This action cannot be undone.\n\nAre you sure you want to clear all data?'
     );

@@ -11,19 +11,19 @@ import { Session } from '../../../../core/db/database.service';
   styleUrl: './session-dialog.component.css',
 })
 export class SessionDialogComponent {
-  mode = input<'create' | 'edit'>('create');
-  session = input<Session | null>(null);
-  sessionsCount = input<number>(0);
+  public readonly mode = input<'create' | 'edit'>('create');
+  public readonly session = input<Session | null>(null);
+  public readonly sessionsCount = input<number>(0);
 
-  save = output<{ name: string; date: string; notes: string }>();
-  delete = output<void>();
-  cancel = output<void>();
+  public readonly save = output<{ name: string; date: string; notes: string }>();
+  public readonly deleteSession = output<void>();
+  public readonly cancelled = output<void>();
 
-  name = signal<string>('');
-  date = signal<string>('');
-  notes = signal<string>('');
+  public readonly name = signal<string>('');
+  public readonly date = signal<string>('');
+  public readonly notes = signal<string>('');
 
-  constructor() {
+  public constructor() {
     effect(() => {
       const currentMode = this.mode();
       const currentSession = this.session();
@@ -41,7 +41,7 @@ export class SessionDialogComponent {
     });
   }
 
-  onSave(): void {
+  public onSave(): void {
     const trimmedName = this.name().trim();
     const trimmedDate = this.date().trim();
     const trimmedNotes = this.notes().trim();
@@ -55,11 +55,11 @@ export class SessionDialogComponent {
     }
   }
 
-  onDelete(): void {
-    this.delete.emit();
+  public onDelete(): void {
+    this.deleteSession.emit();
   }
 
-  onCancel(): void {
-    this.cancel.emit();
+  public onCancel(): void {
+    this.cancelled.emit();
   }
 }

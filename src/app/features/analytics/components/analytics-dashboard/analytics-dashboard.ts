@@ -2,7 +2,7 @@ import { Component, inject, signal, computed, effect } from '@angular/core';
 import { DecimalPipe, PercentPipe } from '@angular/common';
 import { SessionStateService } from '../../../tracker/services/session-state.service';
 import { StatsService, RollStats } from '../../services/stats.service';
-import { DatabaseService, Player, Character } from '../../../../core/db/database.service';
+import { DatabaseService, Player } from '../../../../core/db/database.service';
 import { RollDistributionChartComponent } from '../roll-distribution-chart/roll-distribution-chart.component';
 import { CampaignTrendChartComponent } from '../campaign-trend-chart/campaign-trend-chart.component';
 
@@ -14,35 +14,35 @@ import { CampaignTrendChartComponent } from '../campaign-trend-chart/campaign-tr
   styleUrl: './analytics-dashboard.css',
 })
 export class AnalyticsDashboardComponent {
-  readonly state = inject(SessionStateService);
-  readonly stats = inject(StatsService);
+  public readonly state = inject(SessionStateService);
+  public readonly stats = inject(StatsService);
   private readonly db = inject(DatabaseService);
 
   // 'session', 'campaign', or 'global' (cross-campaign)
-  statsScope = signal<'session' | 'campaign' | 'global'>('session');
+  public readonly statsScope = signal<'session' | 'campaign' | 'global'>('session');
 
   // Distribution chart player filter (undefined = overall)
-  selectedCharacterForDistribution = signal<number | undefined>(undefined);
+  public readonly selectedCharacterForDistribution = signal<number | undefined>(undefined);
 
   // Active tab in Analytics view ('overview' | 'distribution' | 'trends')
-  analyticsTab = signal<'overview' | 'distribution' | 'trends'>('overview');
+  public readonly analyticsTab = signal<'overview' | 'distribution' | 'trends'>('overview');
 
   // Stats cache (reused for campaign & global scopes)
-  playerCampaignStats = signal<Record<number, RollStats>>({});
-  campaignOverviewStats = signal<RollStats | null>(null);
-  isLoadingCampaignStats = signal<boolean>(false);
+  public readonly playerCampaignStats = signal<Record<number, RollStats>>({});
+  public readonly campaignOverviewStats = signal<RollStats | null>(null);
+  public readonly isLoadingCampaignStats = signal<boolean>(false);
 
   // Global scope player listing
-  globalPlayers = signal<Player[]>([]);
+  public readonly globalPlayers = signal<Player[]>([]);
 
   // Sort State signals (Default sort by average descending)
-  sortField = signal<string>('average');
-  sortAscending = signal<boolean>(false);
+  public readonly sortField = signal<string>('average');
+  public readonly sortAscending = signal<boolean>(false);
 
-  constructor() {
+  public constructor() {
     effect(async () => {
       // React to changes in rolls, campaign, or scope
-      const rolls = this.state.rolls();
+      this.state.rolls();
       const campaign = this.state.activeCampaign();
       const scope = this.statsScope();
       
@@ -54,7 +54,7 @@ export class AnalyticsDashboardComponent {
     });
   }
 
-  async setScope(scope: 'session' | 'campaign' | 'global') {
+  public async setScope(scope: 'session' | 'campaign' | 'global') {
     this.statsScope.set(scope);
     if (scope === 'campaign') {
       await this.loadCampaignStats();
@@ -114,7 +114,7 @@ export class AnalyticsDashboardComponent {
   }
 
   // Reactive Stats getter based on scope
-  readonly currentStats = computed<RollStats | null>(() => {
+  public readonly currentStats = computed<RollStats | null>(() => {
     if (this.statsScope() === 'session') {
       return this.stats.sessionStats();
     } else {
@@ -123,7 +123,7 @@ export class AnalyticsDashboardComponent {
   });
 
   // Computed rolls array for distribution chart
-  readonly distributionRolls = computed<number[]>(() => {
+  public readonly distributionRolls = computed<number[]>(() => {
     const selectedCharId = this.selectedCharacterForDistribution();
     const rolls = this.state.rolls();
     if (selectedCharId !== undefined) {
@@ -132,7 +132,7 @@ export class AnalyticsDashboardComponent {
     return rolls.map(r => r.value);
   });
 
-  readonly distributionLabel = computed<string>(() => {
+  public readonly distributionLabel = computed<string>(() => {
     const selectedCharId = this.selectedCharacterForDistribution();
     if (selectedCharId === undefined) return 'Overall Group';
     const char = this.state.activeCharacters().find(c => c.id === selectedCharId);
@@ -141,9 +141,9 @@ export class AnalyticsDashboardComponent {
   });
 
   // Reactive computed list for standings with sorting applied
-  readonly standingsList = computed(() => {
+  public readonly standingsList = computed(() => {
     const scope = this.statsScope();
-    let list: { player: { id: number; name: string; characterName?: string; color: string; isDM: boolean; isActive: boolean }; stats: RollStats }[] = [];
+    let list: { player: { id: number; name: string; characterName?: string; color: string; isDM: boolean; isActive: boolean }; stats: RollStats }[];
 
     if (scope === 'session') {
       const sessionMap = this.stats.playerSessionStatsMap();
@@ -203,8 +203,8 @@ export class AnalyticsDashboardComponent {
     const multiplier = asc ? 1 : -1;
 
     return [...list].sort((a, b) => {
-      let valA: any;
-      let valB: any;
+      let valA: string | number;
+      let valB: string | number;
 
       switch (field) {
         case 'player':
@@ -259,12 +259,12 @@ export class AnalyticsDashboardComponent {
   });
 
   // Returns list to render in HTML
-  getStandingsList() {
+  public getStandingsList() {
     return this.standingsList();
   }
 
   // Toggle column sorting
-  toggleSort(field: string) {
+  public toggleSort(field: string) {
     if (this.sortField() === field) {
       this.sortAscending.set(!this.sortAscending());
     } else {
@@ -274,7 +274,7 @@ export class AnalyticsDashboardComponent {
   }
 
   // Reactive computed extremes (min/max) for column highlighting
-  readonly columnExtremes = computed(() => {
+  public readonly columnExtremes = computed(() => {
     const list = this.standingsList();
     // Only calculate extremes for players who actually have rolls logged (ignores 0 rolls skewing averages)
     const activePlayers = list.filter(item => item.stats.totalRolls > 0);
@@ -303,11 +303,11 @@ export class AnalyticsDashboardComponent {
   });
 
   // Calculate if cell should be highlighted as extreme best (green) or worst (red)
-  getCellClass(playerId: number, metric: string, value: number): string {
+  public getCellClass(playerId: number, metric: string, value: number): string {
     const extremes = this.columnExtremes();
     if (!extremes) return '';
 
-    const ext = (extremes as any)[metric];
+    const ext = (extremes as Record<string, { min: number | null; max: number | null }>)[metric];
     if (!ext || ext.min === null || ext.max === null) return '';
 
     // Ignore players with 0 rolls

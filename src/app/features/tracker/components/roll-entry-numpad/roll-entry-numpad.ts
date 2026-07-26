@@ -12,30 +12,30 @@ import { Character, Roll } from '../../../../core/db/database.service';
   styleUrl: './roll-entry-numpad.css',
 })
 export class RollEntryNumpadComponent {
-  readonly state = inject(SessionStateService);
-  readonly stats = inject(StatsService);
-  readonly settings = inject(SettingsService);
+  public readonly state = inject(SessionStateService);
+  public readonly stats = inject(StatsService);
+  public readonly settings = inject(SettingsService);
 
   // Buffer state for keyboard typing
-  inputBuffer = '';
-  private bufferTimeout: any = null;
+  public inputBuffer = '';
+  private bufferTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Visual effects state
-  flashingPlayerId = signal<number | null>(null);
-  flashingButtonValue = signal<number | null>(null);
-  undoFlashActive = signal<boolean>(false);
+  public readonly flashingPlayerId = signal<number | null>(null);
+  public readonly flashingButtonValue = signal<number | null>(null);
+  public readonly undoFlashActive = signal<boolean>(false);
 
   // Keyboard shortcut hints map
-  readonly playerHotkeys = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I'];
+  public readonly playerHotkeys = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I'];
 
   // Slice of the last 5 rolls for the quick feed
-  readonly recentRolls = computed<Roll[]>(() => {
+  public readonly recentRolls = computed<Roll[]>(() => {
     const list = this.state.rolls();
     return list.slice(-5).reverse(); // Last 5 rolls, newest first
   });
 
   // Map to resolve player details quickly
-  readonly characterMap = computed<Map<number, Character>>(() => {
+  public readonly characterMap = computed<Map<number, Character>>(() => {
     const map = new Map<number, Character>();
     for (const char of this.state.activeCharacters()) {
       if (char.id !== undefined) {
@@ -47,7 +47,7 @@ export class RollEntryNumpadComponent {
 
   // Listen to global window keydown events when focus isn't in an input box
   @HostListener('window:keydown', ['$event'])
-  handleKeyDown(event: KeyboardEvent) {
+  public handleKeyDown(event: KeyboardEvent) {
     if (!this.settings.keyboardShortcutsEnabled()) return;
 
     const activeEl = document.activeElement;
@@ -95,7 +95,7 @@ export class RollEntryNumpadComponent {
     }
   }
 
-  selectPlayer(character: Character) {
+  public selectPlayer(character: Character) {
     this.state.activeCharacter.set(character);
     if (character.id !== undefined) {
       this.flashPlayer(character.id);
@@ -122,7 +122,7 @@ export class RollEntryNumpadComponent {
     }, 150);
   }
 
-  triggerUndo() {
+  public triggerUndo() {
     this.undoFlashActive.set(true);
     this.state.undoLastRoll();
     setTimeout(() => this.undoFlashActive.set(false), 200);
@@ -189,24 +189,24 @@ export class RollEntryNumpadComponent {
   }
 
   // Direct mouse/tap logging on numpad
-  onNumpadTap(val: number) {
+  public onNumpadTap(val: number) {
     this.commitRoll(val);
     this.clearBuffer();
   }
 
   // Get current player stats helper
-  getPlayerStats(characterId: number) {
+  public getPlayerStats(characterId: number) {
     const statsMap = this.stats.playerSessionStatsMap();
     return statsMap.get(characterId) || { totalRolls: 0, average: 0, luckAmount: 0 };
   }
 
   // Resolve player color helper
-  getPlayerColor(characterId: number): string {
+  public getPlayerColor(characterId: number): string {
     return this.characterMap().get(characterId)?.color || '#9ca3af';
   }
 
   // Resolve player name helper
-  getPlayerName(characterId: number): string {
+  public getPlayerName(characterId: number): string {
     const char = this.state.activeCharacters().find(c => c.id === characterId);
     if (!char) return 'Unknown';
     return char.isDM

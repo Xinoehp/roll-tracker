@@ -381,7 +381,7 @@ describe('Stats Service Calculation Validation', () => {
   let db: DatabaseService;
   let statsService: StatsService;
   let stateService: SessionStateService;
-  let seedIds: any;
+  let seedIds: Awaited<ReturnType<typeof seedMockDatabase>>;
 
   beforeEach(async () => {
     TestBed.configureTestingModule({

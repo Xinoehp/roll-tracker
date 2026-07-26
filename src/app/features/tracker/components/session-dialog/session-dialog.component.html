@@ -1,6 +1,6 @@
-<div class="modal-backdrop" (click)="onCancel()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    <h3>{{ mode() === 'create' ? 'Create New Session' : 'Edit Session Details' }}</h3>
+<div class="modal-backdrop" role="presentation" (click)="onCancel()" (keydown.escape)="onCancel()">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="session-dialog-title" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <h3 id="session-dialog-title">{{ mode() === 'create' ? 'Create New Session' : 'Edit Session Details' }}</h3>
 
     <form (ngSubmit)="onSave()">
       <div class="form-group">

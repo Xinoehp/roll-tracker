@@ -1,10 +1,10 @@
 import type { SessionContext } from './recap.service';
 import {
   stdDev, median, formatList,
-  longestConsecutiveRun, longestConsecutiveRunDetails,
-  longestAlternatingRun, longestAlternatingRunDetails,
-  longestDuplicateRun, longestDuplicateRunDetails,
-  longestStraight, longestStraightDetails,
+  longestConsecutiveRunDetails,
+  longestAlternatingRunDetails,
+  longestDuplicateRunDetails,
+  longestStraightDetails,
   luckPct, formatRollPosition, formatRollIndices, formatDateStr,
 } from './highlight-rules';
 

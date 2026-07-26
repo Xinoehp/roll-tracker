@@ -20,13 +20,15 @@ export interface SessionContext {
   lowestAvg?: number;
   mostRollsPlayer?: string;
   mostRollsCount?: number;
+  totalRollsInSession?: number;
+  playerRollCounts?: Record<number, number>;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class RecapService {
-  readonly presetColors = [
+  public readonly presetColors = [
     '#f59e0b', // Amber
     '#ef4444', // Red
     '#3b82f6', // Blue
@@ -38,10 +40,10 @@ export class RecapService {
   ];
 
   // Generate highlight blocks for a single player in a session or campaign
-  generateHighlights(
+  public generateHighlights(
     playerName: string,
     characterName: string,
-    isDM: boolean,
+    _isDM: boolean,
     rolls: number[],
     sessionContext: SessionContext,
     rollDates?: string[]
@@ -99,7 +101,7 @@ export class RecapService {
   }
 
   // Compress payload using native browser CompressionStream (Deflate)
-  async compressRecap(payload: any): Promise<string> {
+  public async compressRecap(payload: unknown): Promise<string> {
     const jsonStr = JSON.stringify(payload);
 
     // Check if CompressionStream is available (runs in browser but might not in test runner)
@@ -126,7 +128,7 @@ export class RecapService {
   }
 
   // Decompress base64 query param back to JSON payload
-  async decompressRecap(base64Str: string): Promise<any> {
+  public async decompressRecap(base64Str: string): Promise<unknown> {
     let base64 = base64Str.replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4) base64 += '=';
 

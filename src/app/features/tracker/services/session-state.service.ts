@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { DatabaseService, Campaign, Player, Character, Session, Roll } from '../../../core/db/database.service';
+import { DatabaseService, Campaign, Character, Session, Roll } from '../../../core/db/database.service';
 
 @Injectable({
   providedIn: 'root',
@@ -8,22 +8,22 @@ export class SessionStateService {
   private readonly db = inject(DatabaseService);
 
   // Core Version 2 Signals
-  readonly activeCampaign = signal<Campaign | null>(null);
-  readonly activeSession = signal<Session | null>(null);
-  readonly activeCharacters = signal<Character[]>([]);
-  readonly activeCharacter = signal<Character | null>(null);
-  readonly rolls = signal<Roll[]>([]);
-  readonly showEditSessionModal = signal<boolean>(false);
+  public readonly activeCampaign = signal<Campaign | null>(null);
+  public readonly activeSession = signal<Session | null>(null);
+  public readonly activeCharacters = signal<Character[]>([]);
+  public readonly activeCharacter = signal<Character | null>(null);
+  public readonly rolls = signal<Roll[]>([]);
+  public readonly showEditSessionModal = signal<boolean>(false);
 
   // Computed properties
-  readonly hasActiveSession = computed(() => this.activeSession() !== null);
+  public readonly hasActiveSession = computed(() => this.activeSession() !== null);
   
   // Filters active characters to only show those currently playing
-  readonly activeCharactersFiltered = computed(() => 
+  public readonly activeCharactersFiltered = computed(() => 
     this.activeCharacters().filter(c => c.isActive)
   );
 
-  constructor() {
+  public constructor() {
     // Automatically load default campaign on init
     this.initializeDefaultState();
   }
@@ -39,7 +39,7 @@ export class SessionStateService {
     }
   }
 
-  async setCampaign(campaign: Campaign | null) {
+  public async setCampaign(campaign: Campaign | null) {
     this.activeCampaign.set(campaign);
     if (!campaign || !campaign.id) {
       this.activeSession.set(null);
@@ -75,7 +75,7 @@ export class SessionStateService {
     }
   }
 
-  async setSession(session: Session) {
+  public async setSession(session: Session) {
     this.activeSession.set(session);
     if (!session.id) return;
 
@@ -87,7 +87,7 @@ export class SessionStateService {
     this.rolls.set(sessionRolls);
   }
 
-  async refreshCharacters() {
+  public async refreshCharacters() {
     const campaign = this.activeCampaign();
     if (!campaign || !campaign.id) return;
 
@@ -119,7 +119,7 @@ export class SessionStateService {
     }
   }
 
-  async createCampaign(name: string, description?: string) {
+  public async createCampaign(name: string, description?: string) {
     const id = await this.db.campaigns.add({
       name,
       description,
@@ -130,7 +130,7 @@ export class SessionStateService {
     return newCampaign;
   }
 
-  async createSession(name: string, dateStr: string, notes: string = '') {
+  public async createSession(name: string, dateStr: string, notes = '') {
     const campaign = this.activeCampaign();
     if (!campaign || !campaign.id) throw new Error('No active campaign');
 
@@ -155,12 +155,12 @@ export class SessionStateService {
     return newSession;
   }
 
-  async addCharacter(playerName: string, color: string, isDM?: boolean, characterName?: string) {
+  public async addCharacter(playerName: string, color: string, isDM?: boolean, characterName?: string) {
     const campaign = this.activeCampaign();
     if (!campaign || !campaign.id) throw new Error('No active campaign');
 
     // 1. Find or create global Player
-    let player = await this.db.players.where('name').equalsIgnoreCase(playerName).first();
+    const player = await this.db.players.where('name').equalsIgnoreCase(playerName).first();
     let playerId: number;
     if (!player) {
       try {
@@ -201,7 +201,7 @@ export class SessionStateService {
     return newChar;
   }
 
-  async deleteCharacter(characterId: number) {
+  public async deleteCharacter(characterId: number) {
     const campaign = this.activeCampaign();
     if (!campaign || !campaign.id) return;
 
@@ -233,7 +233,7 @@ export class SessionStateService {
   }
 
   // Toggle Character show/hide playing status
-  async toggleCharacterActive(characterId: number) {
+  public async toggleCharacterActive(characterId: number) {
     const char = await this.db.characters.get(characterId);
     if (char) {
       char.isActive = !char.isActive;
@@ -248,7 +248,7 @@ export class SessionStateService {
     }
   }
 
-  async logRoll(value: number) {
+  public async logRoll(value: number) {
     const session = this.activeSession();
     const char = this.activeCharacter();
     if (!session || !session.id || !char || !char.id) return;
@@ -266,7 +266,7 @@ export class SessionStateService {
     this.rolls.update(prev => [...prev, rollRecord]);
   }
 
-  async undoLastRoll() {
+  public async undoLastRoll() {
     const list = this.rolls();
     if (list.length === 0) return;
 
@@ -277,7 +277,7 @@ export class SessionStateService {
     }
   }
 
-  async deleteRoll(rollId: number) {
+  public async deleteRoll(rollId: number) {
     await this.db.rolls.delete(rollId);
     this.rolls.update(prev => prev.filter(r => r.id !== rollId));
   }
