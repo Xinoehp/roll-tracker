@@ -107,6 +107,13 @@ export class SessionStateService {
       })
     );
 
+    // Sort active characters first, hidden (inactive) characters to bottom
+    joinedCharacters.sort((a, b) => {
+      const aActive = a.isActive !== false ? 1 : 0;
+      const bActive = b.isActive !== false ? 1 : 0;
+      return bActive - aActive;
+    });
+
     this.activeCharacters.set(joinedCharacters);
 
     // Sync active selection
