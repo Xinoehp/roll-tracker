@@ -31,7 +31,7 @@ export class RollEntryNumpadComponent {
   // Slice of the last 5 rolls for the quick feed
   public readonly recentRolls = computed<Roll[]>(() => {
     const list = this.state.rolls();
-    return list.slice(-5).reverse(); // Last 5 rolls, newest first
+    return list.slice(-10).reverse(); // Last 5 rolls, newest first
   });
 
   // Map to resolve player details quickly
@@ -52,10 +52,10 @@ export class RollEntryNumpadComponent {
 
     const activeEl = document.activeElement;
     if (
-      activeEl && 
-      (activeEl.tagName === 'INPUT' || 
-       activeEl.tagName === 'TEXTAREA' || 
-       activeEl.getAttribute('contenteditable') === 'true')
+      activeEl &&
+      (activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.getAttribute('contenteditable') === 'true')
     ) {
       return;
     }
@@ -155,7 +155,7 @@ export class RollEntryNumpadComponent {
     if (this.inputBuffer) {
       const combined = this.inputBuffer + digit;
       const combinedVal = parseInt(combined);
-      
+
       if (combinedVal >= 1 && combinedVal <= 20) {
         this.commitRoll(combinedVal);
       } else {
@@ -169,9 +169,9 @@ export class RollEntryNumpadComponent {
         // Cannot have a leading 0, ignore
         return;
       }
-      
+
       this.inputBuffer = digit;
-      
+
       // Wait for a second digit for 400ms. If none typed, commit single digit (1 or 2)
       this.bufferTimeout = setTimeout(() => {
         const commitVal = parseInt(this.inputBuffer);

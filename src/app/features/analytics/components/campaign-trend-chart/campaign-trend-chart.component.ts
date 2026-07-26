@@ -165,7 +165,10 @@ export class CampaignTrendChartComponent implements OnDestroy {
         },
         scales: {
           x: {
-            ticks: { color: '#cbd5e1' },
+            ticks: {
+              color: '#cbd5e1',
+              maxTicksLimit: 12,
+            },
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
           },
           y: {
