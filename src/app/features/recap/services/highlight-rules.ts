@@ -225,6 +225,31 @@ export function formatProbabilityPct(p: number): string {
   return '<0.01%';
 }
 
+/** Binomial coefficient C(n, k) */
+export function comb(n: number, k: number): number {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  if (k > n - k) k = n - k;
+  let result = 1;
+  for (let i = 0; i < k; i++) {
+    result = result * (n - i) / (i + 1);
+  }
+  return Math.round(result);
+}
+
+export function occupancyProbAtMost(M: number, N: number, D = 20): number {
+  let total = 0;
+  for (let m = 1; m <= M; m++) {
+    let surjProb = 0;
+    for (let j = 0; j <= m; j++) {
+      const sign = j % 2 === 0 ? 1 : -1;
+      surjProb += sign * comb(m, j) * Math.pow((m - j) / D, N);
+    }
+    total += comb(D, m) * surjProb;
+  }
+  return Math.max(1e-10, Math.min(1, total));
+}
+
 // ─── Rule Registry ─────────────────────────────────────────────────────────────
 
 export const HIGHLIGHT_RULES: HighlightRule[] = [
@@ -404,34 +429,32 @@ export const HIGHLIGHT_RULES: HighlightRule[] = [
     id: 'missing_numbers',
     emoji: '🧙‍♂️',
     label: (rolls) => {
-      const rolled = new Set(rolls);
-      const K = Array.from({ length: 20 }, (_, i) => i + 1).filter(n => !rolled.has(n)).length;
-      const odds = Math.pow((20 - K) / 20, rolls.length);
-      return `Missed ${K} numbers (1 in ${Math.round(1 / odds).toLocaleString()} odds)`;
+      const M = new Set(rolls).size;
+      const prob = occupancyProbAtMost(M, rolls.length);
+      return `Only ${M} distinct values in ${rolls.length} rolls (1 in ${Math.round(1 / prob).toLocaleString()} odds)`;
     },
     generateText: (rolls, _ctx, _pn, dn) => {
       const rolled = new Set(rolls);
+      const M = rolled.size;
       const missing = Array.from({ length: 20 }, (_, i) => i + 1).filter(n => !rolled.has(n));
       const display = missing.slice(0, 10);
       const suffix = missing.length > 10 ? ' among others' : '';
-      const odds = Math.pow((20 - missing.length) / 20, rolls.length);
-      return `${dn} managed to complete the session without rolling a single ${formatList(display)}${suffix} across ${rolls.length} rolls. The mathematical odds of avoiding those numbers are roughly 1 in ${Math.round(1 / odds).toLocaleString()}!`;
+      const prob = occupancyProbAtMost(M, rolls.length);
+      return `${dn} managed to complete the session without rolling a single ${formatList(display)}${suffix} across ${rolls.length} rolls — seeing only ${M} distinct values. The odds of this few? Roughly 1 in ${Math.round(1 / prob).toLocaleString()}!`;
     },
     rawProbability: (rolls) => {
-      const rolled = new Set(rolls);
-      const K = Array.from({ length: 20 }, (_, i) => i + 1).filter(n => !rolled.has(n)).length;
-      return Math.max(1e-6, Math.pow((20 - K) / 20, rolls.length));
+      const M = new Set(rolls).size;
+      return Math.max(1e-6, occupancyProbAtMost(M, rolls.length));
     },
     improbabilityScore: (rolls) => {
-      const rolled = new Set(rolls);
-      const K = Array.from({ length: 20 }, (_, i) => i + 1).filter(n => !rolled.has(n)).length;
-      return pValueToScore(Math.pow((20 - K) / 20, rolls.length));
+      const M = new Set(rolls).size;
+      return pValueToScore(occupancyProbAtMost(M, rolls.length));
     },
     isValid: (rolls) => {
-      if (rolls.length < 6) return false;
-      const rolled = new Set(rolls);
-      const K = Array.from({ length: 20 }, (_, i) => i + 1).filter(n => !rolled.has(n)).length;
-      return K >= 8 && Math.pow((20 - K) / 20, rolls.length) < 0.1;
+      if (rolls.length < 15) return false;
+      const M = new Set(rolls).size;
+      const prob = occupancyProbAtMost(M, rolls.length);
+      return prob < 0.05;
     },
   },
 
