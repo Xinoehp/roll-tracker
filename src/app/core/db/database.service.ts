@@ -47,13 +47,13 @@ export interface Roll {
   providedIn: 'root',
 })
 export class DatabaseService extends Dexie {
-  campaigns!: Table<Campaign, number>;
-  players!: Table<Player, number>;
-  characters!: Table<Character, number>;
-  sessions!: Table<Session, number>;
-  rolls!: Table<Roll, number>;
+  public campaigns!: Table<Campaign, number>;
+  public players!: Table<Player, number>;
+  public characters!: Table<Character, number>;
+  public sessions!: Table<Session, number>;
+  public rolls!: Table<Roll, number>;
 
-  constructor() {
+  public constructor() {
     super('DiceTrackerDB');
     
     // Active normalized schema version 2
@@ -81,7 +81,7 @@ export class DatabaseService extends Dexie {
   }
 
   // Clear all database tables
-  async clearAll() {
+  public async clearAll() {
     await this.rolls.clear();
     await this.sessions.clear();
     await this.characters.clear();

@@ -5,8 +5,12 @@ import { RollEntryNumpadComponent } from './features/tracker/components/roll-ent
 import { AnalyticsDashboardComponent } from './features/analytics/components/analytics-dashboard/analytics-dashboard';
 import { RecentRollsFeedComponent } from './features/tracker/components/recent-rolls-feed/recent-rolls-feed';
 import { SessionRecapViewComponent, RecapPlayerData } from './features/recap/components/session-recap-view/session-recap-view';
-import { RecapService, StatHighlight } from './features/recap/services/recap.service';
+import { RecapService, StatHighlight, SessionContext } from './features/recap/services/recap.service';
 import { SettingsViewComponent } from './features/settings/components/settings-view/settings-view';
+import { SessionDialogComponent } from './features/tracker/components/session-dialog/session-dialog.component';
+import { CharacterDialogComponent } from './features/tracker/components/character-dialog/character-dialog.component';
+import { CampaignDialogComponent } from './features/tracker/components/campaign-dialog/campaign-dialog.component';
+import { SidebarComponent } from './features/tracker/components/sidebar/sidebar.component';
 import {
   getRandomSessionIntro,
   getRandomSessionOutro,
@@ -14,30 +18,42 @@ import {
   getRandomCampaignOutro,
 } from './features/recap/services/highlight-flavour';
 
+export interface SharedRecapPayload {
+  c?: string;
+  s?: string;
+  d?: string;
+  r?: string;
+  p?: { c?: string; dm?: boolean; st?: number[] }[];
+}
+
 @Component({
   selector: 'app-root',
   imports: [
+    SidebarComponent,
     RollEntryNumpadComponent,
     AnalyticsDashboardComponent,
     RecentRollsFeedComponent,
     SessionRecapViewComponent,
     SettingsViewComponent,
+    SessionDialogComponent,
+    CharacterDialogComponent,
+    CampaignDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnInit {
   private readonly db = inject(DatabaseService);
-  readonly state = inject(SessionStateService);
+  public readonly state = inject(SessionStateService);
   private readonly recapService = inject(RecapService);
 
   // Shell navigation and sidebar state
-  activeTab = signal<'numpad' | 'analytics' | 'logs' | 'recap' | 'settings'>('numpad');
-  sidebarWidth = signal<number>(parseInt(localStorage.getItem('sidebar_width') || '260'));
-  campaignsList = signal<Campaign[]>([]);
-  sessionsList = signal<Session[]>([]);
+  public readonly activeTab = signal<'numpad' | 'analytics' | 'logs' | 'recap' | 'settings'>('numpad');
+  public readonly sidebarWidth = signal<number>(parseInt(localStorage.getItem('sidebar_width') || '260'));
+  public readonly campaignsList = signal<Campaign[]>([]);
+  public readonly sessionsList = signal<Session[]>([]);
 
-  startResizing(event: MouseEvent) {
+  public startResizing(event: MouseEvent) {
     event.preventDefault();
     const startX = event.clientX;
     const startWidth = this.sidebarWidth();
@@ -58,50 +74,16 @@ export class App implements OnInit {
   }
 
   // Modal / Form toggle states
-  showCampaignForm = signal<boolean>(false);
-  showSessionForm = signal<boolean>(false);
-  showPlayerForm = signal<boolean>(false);
-
-  // Form input bindings (simple string signals)
-  newCampaignName = signal<string>('');
-  newCampaignDesc = signal<string>('');
-  newSessionName = signal<string>('');
-  newSessionDate = signal<string>('');
-  newPlayerName = signal<string>('');
-  newPlayerColor = signal<string>('#3b82f6'); // Default Blue
-  newPlayerCharName = signal<string>('');
-  newPlayerIsDM = signal<boolean>(false);
+  public readonly showCampaignForm = signal<boolean>(false);
+  public readonly showSessionForm = signal<boolean>(false);
+  public readonly showPlayerForm = signal<boolean>(false);
+  public readonly showEditPlayerForm = signal<boolean>(false);
+  public readonly editingCharacter = signal<Character | null>(null);
 
   // Dropdown player select bindings
-  globalPlayers = signal<Player[]>([]);
-  selectedPlayerId = signal<string>('new');
+  public readonly globalPlayers = signal<Player[]>([]);
 
-  // Edit player form bindings
-  showEditPlayerForm = signal<boolean>(false);
-  editingPlayerId = signal<number | null>(null);
-  editPlayerName = signal<string>('');
-  editPlayerCharName = signal<string>('');
-  editPlayerColor = signal<string>('');
-  editPlayerIsDM = signal<boolean>(false);
-
-  // Edit session form bindings
-  editSessionName = signal<string>('');
-  editSessionDate = signal<string>('');
-  editSessionNotes = signal<string>('');
-
-  // Colors list for player creation
-  readonly presetColors = [
-    '#f59e0b', // Amber
-    '#ef4444', // Red
-    '#3b82f6', // Blue
-    '#10b981', // Emerald
-    '#ec4899', // Pink
-    '#8b5cf6', // Purple
-    '#06b6d4', // Cyan
-    '#f97316', // Orange
-  ];
-
-  constructor() {
+  public constructor() {
     // Automatically load the sessions list when the active campaign changes
     effect(async () => {
       const activeCamp = this.state.activeCampaign();
@@ -112,25 +94,13 @@ export class App implements OnInit {
       }
     });
 
-    // Populate edit session form when state triggers edit modal
-    effect(() => {
-      if (this.state.showEditSessionModal()) {
-        const session = this.state.activeSession();
-        if (session) {
-          this.editSessionName.set(session.name);
-          this.editSessionDate.set(session.date);
-          this.editSessionNotes.set(session.notes || '');
-        }
-      }
-    });
-
     // Automatically load/refresh recap data when activeTab is 'recap', or when campaign/session/recapType/characters change
     effect(async () => {
       const tab = this.activeTab();
       const camp = this.state.activeCampaign();
-      const sess = this.state.activeSession();
       const type = this.recapType();
-      const chars = this.state.activeCharacters(); // tracks character visibility toggles in the sidebar
+      this.state.activeSession();
+      this.state.activeCharacters(); // tracks character visibility toggles in the sidebar
 
       if (tab === 'recap' && camp) {
         await this.loadRecapData(type);
@@ -138,11 +108,9 @@ export class App implements OnInit {
     });
   }
 
-  async ngOnInit() {
+  public async ngOnInit() {
     await this.refreshCampaigns();
     await this.loadGlobalPlayers();
-    // Default form date to today
-    this.newSessionDate.set(new Date().toISOString().split('T')[0]);
 
     // Check for sharing URL query param "?share="
     const urlParams = new URLSearchParams(window.location.search);
@@ -161,19 +129,19 @@ export class App implements OnInit {
   }
 
   // Load all global players from database
-  async loadGlobalPlayers() {
+  public async loadGlobalPlayers() {
     const list = await this.db.players.toArray();
     this.globalPlayers.set(list);
   }
 
   // Load list of all campaigns
-  async refreshCampaigns() {
+  public async refreshCampaigns() {
     const list = await this.db.campaigns.orderBy('id').reverse().toArray();
     this.campaignsList.set(list);
   }
 
   // Load sessions for the active campaign
-  async loadSessionsForCampaign(campaignId: number) {
+  public async loadSessionsForCampaign(campaignId: number) {
     const list = await this.db.sessions
       .where('campaignId')
       .equals(campaignId)
@@ -183,7 +151,7 @@ export class App implements OnInit {
   }
 
   // Select campaign from sidebar by ID
-  async selectCampaignById(id: number) {
+  public async selectCampaignById(id: number) {
     const campaign = this.campaignsList().find(c => c.id === id);
     if (campaign) {
       await this.state.setCampaign(campaign);
@@ -191,82 +159,85 @@ export class App implements OnInit {
   }
 
   // Select session from sidebar
-  async selectSession(session: Session) {
+  public async selectSession(session: Session) {
     await this.state.setSession(session);
   }
 
-  // Create Campaign
-  async handleCreateCampaign() {
-    const name = this.newCampaignName().trim();
-    if (!name) return;
+  // Create Campaign handler from CampaignDialogComponent
+  public async handleCreateCampaign(data: { name: string; description: string }) {
+    if (!data.name.trim()) return;
 
-    const newCamp = await this.state.createCampaign(name, this.newCampaignDesc().trim());
+    await this.state.createCampaign(data.name.trim(), data.description.trim());
     await this.refreshCampaigns();
-
-    // Clear inputs and hide form
-    this.newCampaignName.set('');
-    this.newCampaignDesc.set('');
     this.showCampaignForm.set(false);
+    this.showTransientMessage(`Campaign "${data.name}" created! ✅`);
   }
 
-  // Open New Session Form with auto-numbering
-  openNewSessionForm() {
-    const nextNum = this.sessionsList().length + 1;
-    this.newSessionName.set(`Session ${nextNum}`);
-    this.newSessionDate.set(new Date().toISOString().split('T')[0]);
+  // Open New Session Form
+  public openNewSessionForm() {
     this.showSessionForm.set(true);
   }
 
-  // Create Session
-  async handleCreateSession() {
-    const name = this.newSessionName().trim();
-    const date = this.newSessionDate().trim();
-    if (!name || !date) return;
-
+  // Create Session handler from SessionDialogComponent
+  public async handleCreateSession(data: { name: string; date: string; notes: string }) {
     const activeCamp = this.state.activeCampaign();
     if (!activeCamp || activeCamp.id === undefined) return;
 
-    await this.state.createSession(name, date);
+    await this.state.createSession(data.name.trim(), data.date.trim(), data.notes.trim());
     await this.loadSessionsForCampaign(activeCamp.id);
-
-    // Clear inputs and hide form
-    this.newSessionName.set('');
-    this.newSessionDate.set(new Date().toISOString().split('T')[0]);
     this.showSessionForm.set(false);
+    this.showTransientMessage(`Session "${data.name}" created! ✅`);
   }
 
   // Open edit modal for a session
-  openEditSessionModal(session: Session, event?: Event) {
+  public openEditSessionModal(session: Session, event?: Event) {
     if (event) event.stopPropagation();
     this.state.activeSession.set(session);
-    this.editSessionName.set(session.name);
-    this.editSessionDate.set(session.date);
-    this.editSessionNotes.set(session.notes || '');
     this.state.showEditSessionModal.set(true);
   }
 
-  // Delete a session and its associated rolls
-  async handleDeleteSession(session: Session, event?: Event) {
-    if (event) event.stopPropagation();
+  // Save session edits handler from SessionDialogComponent
+  public async handleUpdateSession(data: { name: string; date: string; notes: string }) {
+    const session = this.state.activeSession();
     if (!session || !session.id) return;
 
-    const confirmMsg = `Are you sure you want to delete session "${session.name}"? All rolls recorded in this session will be permanently deleted.`;
-    if (!confirm(confirmMsg)) return;
+    const updatedSession: Session = {
+      ...session,
+      name: data.name.trim(),
+      date: data.date.trim(),
+      notes: data.notes.trim(),
+    };
 
-    // 1. Delete all rolls matching this session
-    await this.db.rolls.where('sessionId').equals(session.id).delete();
+    await this.db.sessions.put(updatedSession);
+    this.state.activeSession.set(updatedSession);
 
-    // 2. Delete the session
-    await this.db.sessions.delete(session.id);
-
-    // 3. Refresh session list
     const activeCamp = this.state.activeCampaign();
     if (activeCamp && activeCamp.id !== undefined) {
       await this.loadSessionsForCampaign(activeCamp.id);
     }
 
-    // 4. Update active session selection
-    if (this.state.activeSession()?.id === session.id) {
+    this.state.showEditSessionModal.set(false);
+    this.showTransientMessage(`Session details updated.`);
+  }
+
+  // Delete a session and its associated rolls
+  public async handleDeleteSession(session?: Session | null, event?: Event) {
+    if (event) event.stopPropagation();
+    const targetSession = session || this.state.activeSession();
+    if (!targetSession || !targetSession.id) return;
+
+    const confirmMsg = `Are you sure you want to delete session "${targetSession.name}"? All rolls recorded in this session will be permanently deleted.`;
+    if (!confirm(confirmMsg)) return;
+
+    await this.db.rolls.where('sessionId').equals(targetSession.id).delete();
+    await this.db.sessions.delete(targetSession.id);
+
+    const activeCamp = this.state.activeCampaign();
+    if (activeCamp && activeCamp.id !== undefined) {
+      await this.loadSessionsForCampaign(activeCamp.id);
+    }
+
+    if (this.state.activeSession()?.id === targetSession.id) {
       const remaining = this.sessionsList();
       if (remaining.length > 0) {
         await this.selectSession(remaining[0]);
@@ -276,139 +247,69 @@ export class App implements OnInit {
       }
     }
 
-    // Close modal if open
     this.state.showEditSessionModal.set(false);
-    this.showTransientMessage(`Session "${session.name}" deleted.`);
+    this.showTransientMessage(`Session "${targetSession.name}" deleted.`);
   }
 
-  // Save session edits
-  async handleUpdateSession() {
-    const session = this.state.activeSession();
-    if (!session || !session.id) return;
-
-    const name = this.editSessionName().trim();
-    const date = this.editSessionDate().trim();
-    if (!name || !date) return;
-
-    const updatedSession: Session = {
-      ...session,
-      name,
-      date,
-      notes: this.editSessionNotes().trim(),
-    };
-
-    await this.db.sessions.put(updatedSession);
-    this.state.activeSession.set(updatedSession);
-
-    // Refresh the sidebar sessions list
-    const activeCamp = this.state.activeCampaign();
-    if (activeCamp && activeCamp.id !== undefined) {
-      await this.loadSessionsForCampaign(activeCamp.id);
+  // Add Character handler from CharacterDialogComponent
+  public async handleAddPlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
+    let playerName = data.playerName;
+    if (data.selectedPlayerId !== 'new') {
+      const p = this.globalPlayers().find(pl => pl.id === parseInt(data.selectedPlayerId));
+      if (p) playerName = p.name;
     }
 
-    // Close the modal
-    this.state.showEditSessionModal.set(false);
-    this.showTransientMessage(`Session details updated.`);
-  }
-
-  // Add Character to campaign (with optional new player creation or existing selection)
-  async handleAddPlayer() {
-    const selectedId = this.selectedPlayerId();
-    const charName = this.newPlayerCharName().trim();
-    const color = this.newPlayerColor();
-    const isDM = this.newPlayerIsDM();
-
-    // Character name is required
-    if (!charName) return;
-
-    let playerName = '';
-    if (selectedId === 'new') {
-      playerName = this.newPlayerName().trim();
-      if (!playerName) return; // Player name required if creating new
-    } else {
-      const player = this.globalPlayers().find(p => p.id === parseInt(selectedId));
-      if (!player) return;
-      playerName = player.name;
-    }
-
-    await this.state.addCharacter(playerName, color, isDM, charName);
-    await this.loadGlobalPlayers(); // Refresh dropdown list
-
-    // Clear inputs and hide form
-    this.newPlayerName.set('');
-    this.newPlayerCharName.set('');
-    this.newPlayerIsDM.set(false);
-    this.newPlayerColor.set(this.presetColors[0]);
-    this.selectedPlayerId.set('new');
+    await this.state.addCharacter(playerName, data.color, data.isDM, data.characterName);
+    await this.loadGlobalPlayers();
     this.showPlayerForm.set(false);
+    this.showTransientMessage(`Character "${data.characterName}" added! ✅`);
   }
 
   // Open Edit Player Form
-  openEditPlayerForm(player: Character, event: Event) {
-    event.stopPropagation(); // Avoid triggering parent item clicks
+  public openEditPlayerForm(player: Character, event: Event) {
+    event.stopPropagation();
     if (!player.id) return;
-    this.editingPlayerId.set(player.id);
-    this.editPlayerName.set(player.name);
-    this.editPlayerCharName.set(player.name);
-    this.loadPlayerNameForEdit(player);
-
-    this.editPlayerColor.set(player.color);
-    this.editPlayerIsDM.set(!!player.isDM);
+    this.editingCharacter.set(player);
     this.showEditPlayerForm.set(true);
   }
 
-  private async loadPlayerNameForEdit(character: Character) {
-    const player = await this.db.players.get(character.playerId);
-    if (player) {
-      this.editPlayerName.set(player.name);
-      this.editPlayerCharName.set(character.name);
-    }
-  }
+  // Save Player edits handler from CharacterDialogComponent
+  public async handleUpdatePlayer(data: { playerName: string; characterName: string; color: string; isDM: boolean; selectedPlayerId: string }) {
+    const character = this.editingCharacter();
+    if (!character || !character.id) return;
 
-  // Save Player edits
-  async handleUpdatePlayer() {
-    const characterId = this.editingPlayerId();
-    if (characterId === null) return;
+    const updatedChar: Character = {
+      ...character,
+      name: data.characterName,
+      color: data.color,
+      isDM: data.isDM,
+    };
 
-    const playerName = this.editPlayerName().trim();
-    const color = this.editPlayerColor();
-    const characterName = this.editPlayerCharName().trim();
-    const isDM = this.editPlayerIsDM();
-    if (!playerName || !characterName) return;
-
-    const character = await this.db.characters.get(characterId);
-    if (character) {
-      // 1. Update global Player name
+    if (data.playerName) {
       const player = await this.db.players.get(character.playerId);
-      if (player && player.name !== playerName) {
-        player.name = playerName;
+      if (player && player.name !== data.playerName) {
+        player.name = data.playerName;
         await this.db.players.put(player);
       }
-
-      // 2. Update campaign Character
-      const updatedChar: Character = {
-        ...character,
-        name: characterName,
-        color,
-        isDM,
-      };
-      await this.db.characters.put(updatedChar);
-      await this.state.refreshCharacters();
-      await this.loadGlobalPlayers(); // Sync dropdown
     }
 
+    await this.db.characters.put(updatedChar);
+    await this.state.refreshCharacters();
+    await this.loadGlobalPlayers();
+
     this.showEditPlayerForm.set(false);
-    this.editingPlayerId.set(null);
+    this.editingCharacter.set(null);
+    this.showTransientMessage(`Character updated.`);
   }
 
   // Toggle Character active/inactive status
-  toggleCharacterActive(characterId: number, event: Event) {
+  public toggleCharacterActive(characterId: number, event: Event) {
     event.stopPropagation();
     this.state.toggleCharacterActive(characterId);
   }
 
   // Remove Player (Character)
-  async handleRemovePlayer(characterId: number, event: Event) {
+  public async handleRemovePlayer(characterId: number, event: Event) {
     event.stopPropagation(); // Avoid selecting the player card when clicking delete
     if (confirm('Are you sure you want to delete this player? This will erase all of their historical rolls!')) {
       await this.state.deleteCharacter(characterId);
@@ -416,45 +317,42 @@ export class App implements OnInit {
     }
   }
 
-  // Set selected player ID from dropdown
-  setSelectedPlayerId(e: Event) {
-    this.selectedPlayerId.set((e.target as HTMLSelectElement).value);
-  }
+
 
   // Recap State & Signals
-  recapAvailableHighlights = signal<Record<number, StatHighlight[]>>({});
-  recapSelectedHighlights = signal<Record<number, string[]>>({});
-  recapAttendance = signal<Record<number, boolean>>({});
-  recapType = signal<'session' | 'campaign'>('session');
-  sharedRecapData = signal<any | null>(null);
-  sharedPlayers = computed<RecapPlayerData[]>(() => {
+  public readonly recapAvailableHighlights = signal<Record<number, StatHighlight[]>>({});
+  public readonly recapSelectedHighlights = signal<Record<number, string[]>>({});
+  public readonly recapAttendance = signal<Record<number, boolean>>({});
+  public readonly recapType = signal<'session' | 'campaign'>('session');
+  public readonly sharedRecapData = signal<SharedRecapPayload | null>(null);
+  public readonly sharedPlayers = computed<RecapPlayerData[]>(() => {
     const data = this.sharedRecapData();
     if (!data || !data.p) return [];
-    return data.p.map((player: any) => {
+    return data.p.map((player) => {
       const charName = player.c || (player.dm ? 'Our Dungeon Master' : 'Adventurer');
       return {
         playerName: charName,
         characterName: charName,
         isDM: !!player.dm,
-        stats: player.st
+        stats: player.st || []
       };
     });
   });
-  recapAlertMessage = signal<string>('');
+  public readonly recapAlertMessage = signal<string>('');
 
-  recapCharactersList = signal<Character[]>([]);
-  recapCharacterRolls = signal<Record<number, number[]>>({});
+  public readonly recapCharactersList = signal<Character[]>([]);
+  public readonly recapCharacterRolls = signal<Record<number, number[]>>({});
 
-  activeRecapCharacters = computed(() => {
+  public readonly activeRecapCharacters = computed(() => {
     return this.recapCharactersList().filter(c => c.isActive);
   });
 
-  hasHiddenPlayers = computed(() => {
+  public readonly hasHiddenPlayers = computed(() => {
     return this.recapCharactersList().some(c => !c.isActive);
   });
 
-  private transientTimer: any = null;
-  showTransientMessage(msg: string) {
+  private transientTimer: ReturnType<typeof setTimeout> | null = null;
+  public showTransientMessage(msg: string) {
     if (this.transientTimer) {
       clearTimeout(this.transientTimer);
     }
@@ -465,11 +363,11 @@ export class App implements OnInit {
     }, 3000);
   }
 
-  setRecapType(type: 'session' | 'campaign') {
+  public setRecapType(type: 'session' | 'campaign') {
     this.recapType.set(type);
   }
 
-  async loadRecapData(type: 'session' | 'campaign') {
+  public async loadRecapData(type: 'session' | 'campaign') {
     const campaignId = this.state.activeCampaign()?.id;
     if (!campaignId) return;
 
@@ -524,76 +422,71 @@ export class App implements OnInit {
     this.recapCharactersList.set(characters);
 
     // Calculate averages and context for the RecapService
-    let highestAvg = -1;
-    let highestAvgPlayer = '';
-    let lowestAvg = 21;
-    let lowestAvgPlayer = '';
-    let mostRollsCount = 0;
-    let mostRollsPlayer = '';
+    // Generate Highlights and set default selections
+    const highlightsMap: Record<number, StatHighlight[]> = {};
+    const attendance: Record<number, boolean> = {};
+    const selected: Record<number, string[]> = {};
+
+    let totalRollsCount = 0;
+    const rollsCountMap: Record<number, number> = {};
 
     for (const char of characters) {
-      const charRolls = rollsMap[char.id!] || [];
-      const N = charRolls.length;
-      if (N > 0) {
-        const charSum = charRolls.reduce((a, b) => a + b, 0);
-        const charAvg = charSum / N;
-        if (charAvg > highestAvg) {
-          highestAvg = charAvg;
-          highestAvgPlayer = char.playerName || '';
-        }
-        if (charAvg < lowestAvg) {
-          lowestAvg = charAvg;
-          lowestAvgPlayer = char.playerName || '';
-        }
-        if (N > mostRollsCount) {
-          mostRollsCount = N;
-          mostRollsPlayer = char.playerName || '';
-        }
+      if (!char.id) continue;
+
+      let rVals: number[];
+
+      if (type === 'session') {
+        const sessId = this.state.activeSession()?.id;
+        if (!sessId) continue;
+        const rolls = await this.db.rolls.where('sessionId').equals(sessId).toArray();
+        rVals = rolls.filter(r => r.characterId === char.id).map(r => r.value);
+      } else {
+        const sessions = await this.db.sessions.where('campaignId').equals(campaignId).sortBy('date');
+        const sessIds = sessions.map(s => s.id!).filter(id => id !== undefined);
+
+        const allSessRolls = await this.db.rolls
+          .where('characterId')
+          .equals(char.id)
+          .filter(r => sessIds.includes(r.sessionId))
+          .toArray();
+
+        rVals = allSessRolls.map(r => r.value);
       }
+
+      rollsMap[char.id] = rVals;
+      rollsCountMap[char.id] = rVals.length;
+      totalRollsCount += rVals.length;
     }
 
-    const context = {
-      highestAvgPlayer,
-      lowestAvgPlayer,
-      highestAvg,
-      lowestAvg,
-      mostRollsPlayer,
-      mostRollsCount,
+    const sessContext: SessionContext = {
+      totalRollsInSession: totalRollsCount,
+      playerRollCounts: rollsCountMap,
     };
 
-    // Generate Highlights and set default selections
-    const available: Record<number, StatHighlight[]> = {};
-    const selected: Record<number, string[]> = {};
-    const attendance: Record<number, boolean> = {};
-
     for (const char of characters) {
-      const charRolls = rollsMap[char.id!] || [];
-      const charRollDates = rollDatesMap[char.id!];
-      const pHighlights = this.recapService.generateHighlights(
-        char.playerName || '',
+      if (!char.id) continue;
+      const rVals = rollsMap[char.id] || [];
+
+      const highlights = this.recapService.generateHighlights(
+        char.playerName || 'Player',
         char.name,
         !!char.isDM,
-        charRolls,
-        context,
-        type === 'campaign' ? charRollDates : undefined
+        rVals,
+        sessContext
       );
 
-      available[char.id!] = pHighlights;
-      attendance[char.id!] = charRolls.length > 0 || type === 'campaign'; // Default present if they rolled
-
-      if (pHighlights.length > 0) {
-        selected[char.id!] = [pHighlights[0].id];
-      } else {
-        selected[char.id!] = [];
-      }
+      highlightsMap[char.id] = highlights;
+      attendance[char.id] = true;
+      selected[char.id] = highlights.length > 0 ? [highlights[0].id] : [];
     }
 
-    this.recapAvailableHighlights.set(available);
+    this.recapCharacterRolls.set(rollsMap);
+    this.recapAvailableHighlights.set(highlightsMap);
     this.recapSelectedHighlights.set(selected);
     this.recapAttendance.set(attendance);
   }
 
-  toggleRecapAttendance(characterId: number) {
+  public toggleRecapAttendance(characterId: number) {
     const att = { ...this.recapAttendance() };
     att[characterId] = !att[characterId];
     this.recapAttendance.set(att);
@@ -608,7 +501,7 @@ export class App implements OnInit {
     }
   }
 
-  toggleRecapHighlight(characterId: number, highlightId: string) {
+  public toggleRecapHighlight(characterId: number, highlightId: string) {
     const selected = { ...this.recapSelectedHighlights() };
     const list = selected[characterId] ? [...selected[characterId]] : [];
     const idx = list.indexOf(highlightId);
@@ -621,7 +514,7 @@ export class App implements OnInit {
     this.recapSelectedHighlights.set(selected);
   }
 
-  getRecapPreviewData() {
+  public getRecapPreviewData() {
     const list: RecapPlayerData[] = [];
     const characters = this.activeRecapCharacters();
     const rollsMap = this.recapCharacterRolls();
@@ -650,10 +543,10 @@ export class App implements OnInit {
   }
 
   // Selected intro & outro text signals
-  recapIntro = signal<string>('');
-  recapOutro = signal<string>('');
+  public readonly recapIntro = signal<string>('');
+  public readonly recapOutro = signal<string>('');
 
-  rerollIntroOutro() {
+  public rerollIntroOutro() {
     const type = this.recapType();
     if (type === 'session') {
       this.recapIntro.set(getRandomSessionIntro());
@@ -664,7 +557,7 @@ export class App implements OnInit {
     }
   }
 
-  getCompiledRecapText(): string {
+  public getCompiledRecapText(): string {
     const lines: string[] = [];
     const type = this.recapType();
 
@@ -709,7 +602,7 @@ export class App implements OnInit {
     return lines.join('\n');
   }
 
-  copyRawStatsForLLM() {
+  public copyRawStatsForLLM() {
     const lines: string[] = [];
     const type = this.recapType();
     const campName = this.state.activeCampaign()?.name || 'Campaign';
@@ -746,12 +639,12 @@ export class App implements OnInit {
     this.showTransientMessage('Stats copied! ✅');
   }
 
-  copyCompiledRecapText() {
+  public copyCompiledRecapText() {
     navigator.clipboard.writeText(this.getCompiledRecapText());
     this.showTransientMessage('Recap copied! ✅');
   }
 
-  async generateShareLink() {
+  public async generateShareLink() {
     const type = this.recapType();
     const campName = this.state.activeCampaign()?.name || '';
     const sessName = type === 'session' ? (this.state.activeSession()?.name || '') : 'Campaign Summary';
@@ -780,59 +673,10 @@ export class App implements OnInit {
     this.showTransientMessage('Share link copied! ✅');
   }
 
-  // Utility inputs setters
-  setNewCampaignName(e: Event) {
-    this.newCampaignName.set((e.target as HTMLInputElement).value);
-  }
-  setNewCampaignDesc(e: Event) {
-    this.newCampaignDesc.set((e.target as HTMLInputElement).value);
-  }
-  setNewSessionName(e: Event) {
-    this.newSessionName.set((e.target as HTMLInputElement).value);
-  }
-  setNewSessionDate(e: Event) {
-    this.newSessionDate.set((e.target as HTMLInputElement).value);
-  }
-  setNewPlayerName(e: Event) {
-    this.newPlayerName.set((e.target as HTMLInputElement).value);
-  }
-  setNewPlayerColor(color: string) {
-    this.newPlayerColor.set(color);
-  }
 
-  // Edit Session setters
-  setEditSessionName(e: Event) {
-    this.editSessionName.set((e.target as HTMLInputElement).value);
-  }
-  setEditSessionDate(e: Event) {
-    this.editSessionDate.set((e.target as HTMLInputElement).value);
-  }
-  setEditSessionNotes(e: Event) {
-    this.editSessionNotes.set((e.target as HTMLInputElement).value);
-  }
-
-  // Add/Edit Player setters
-  setNewPlayerCharName(e: Event) {
-    this.newPlayerCharName.set((e.target as HTMLInputElement).value);
-  }
-  setNewPlayerIsDM(e: Event) {
-    this.newPlayerIsDM.set((e.target as HTMLInputElement).checked);
-  }
-  setEditPlayerName(e: Event) {
-    this.editPlayerName.set((e.target as HTMLInputElement).value);
-  }
-  setEditPlayerCharName(e: Event) {
-    this.editPlayerCharName.set((e.target as HTMLInputElement).value);
-  }
-  setEditPlayerColor(color: string) {
-    this.editPlayerColor.set(color);
-  }
-  setEditPlayerIsDM(e: Event) {
-    this.editPlayerIsDM.set((e.target as HTMLInputElement).checked);
-  }
 
   // Backup entire database state to a JSON file
-  async exportDatabase() {
+  public async exportDatabase() {
     try {
       const campaigns = await this.db.campaigns.toArray();
       const players = await this.db.players.toArray();
@@ -868,7 +712,7 @@ export class App implements OnInit {
   }
 
   // Restore database state from a previously exported JSON backup file
-  async importDatabase(event: Event) {
+  public async importDatabase(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 

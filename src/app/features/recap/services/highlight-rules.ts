@@ -32,7 +32,7 @@ export function median(values: number[]): number {
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-export function formatList(items: any[]): string {
+export function formatList(items: unknown[]): string {
   if (items.length === 0) return '';
   if (items.length === 1) return String(items[0]);
   if (items.length === 2) return `${items[0]} or ${items[1]}`;
@@ -114,7 +114,7 @@ export function longestDuplicateRun(rolls: number[]): { value: number; length: n
 }
 
 export function longestStraightDetails(rolls: number[]): { max: number; values: number[]; startIndex: number } {
-  let max = 1, cur = 1, curStart = 0;
+  let cur = 1, curStart = 0;
   let best = { max: rolls.length > 0 ? 1 : 0, values: rolls.length > 0 ? [rolls[0]] : [], startIndex: 0 };
   for (let i = 1; i < rolls.length; i++) {
     const diff = rolls[i] - rolls[i - 1];

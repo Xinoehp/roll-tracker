@@ -1,0 +1,108 @@
+<aside class="app-sidebar">
+  <div class="sidebar-header">
+    <img class="logo-img" src="logo.jpg" alt="Roll Stats Logo" />
+    <h1>Roll Stats</h1>
+  </div>
+
+  <!-- Campaigns Section -->
+  <div class="sidebar-section">
+    <div class="section-title-row">
+      <h3>Campaigns</h3>
+      <button class="add-small-btn" (click)="onCreateCampaign()" title="Add Campaign">+</button>
+    </div>
+    <div class="select-container">
+      <select [value]="activeCampaign()?.id || ''" (change)="onSelectCampaign($event)">
+        @for (camp of campaigns(); track camp.id) {
+        <option [value]="camp.id" [selected]="activeCampaign()?.id === camp.id">
+          {{ camp.name }}
+        </option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Sessions Section -->
+  <div class="sidebar-section">
+    <div class="section-title-row">
+      <h3>Sessions</h3>
+      <button class="add-small-btn" (click)="onCreateSession()" title="Create Session">+</button>
+    </div>
+    <div class="scroll-list">
+      @if (sessions().length === 0) {
+      <div class="empty-list-text">No sessions. Click + to add.</div>
+      } @else {
+      @for (sess of sessions(); track sess.id) {
+      <div class="session-list-item-wrapper" [class.active]="activeSession()?.id === sess.id">
+        <button class="list-item" (click)="onSelectSession(sess)">
+          <div class="list-item-content">
+            <span class="sess-title">{{ sess.name }}</span>
+            <span class="sess-date">{{ sess.date }}</span>
+          </div>
+        </button>
+        <div class="session-actions-row">
+          <button class="edit-item-small-btn" (click)="onEditSession(sess, $event)"
+            title="Edit Session Details">✏️</button>
+          <button class="delete-item-btn" (click)="onDeleteSession(sess, $event)" title="Delete Session">🗑️</button>
+        </div>
+      </div>
+      }
+      }
+    </div>
+  </div>
+
+  <!-- Players Management Section -->
+  <div class="sidebar-section players-section">
+    <div class="section-title-row">
+      <h3>Campaign Players</h3>
+      <button class="add-small-btn" (click)="onAddCharacter()" title="Add Player">+</button>
+    </div>
+    <div class="scroll-list players-list">
+      @if (characters().length === 0) {
+      <div class="empty-list-text">No players. Click + to add.</div>
+      } @else {
+      @for (player of characters(); track player.id) {
+      <div class="player-list-item" [class.inactive-player-row]="!player.isActive">
+        <div class="player-info">
+          <span class="player-indicator-dot" [style.background-color]="player.color"></span>
+          <span class="player-name">
+            @if (player.isDM) { 👑 }
+            {{ player.playerName }}
+            @if (player.name && player.name !== player.playerName) {
+            <span class="player-char-name">({{ player.name }})</span>
+            }
+          </span>
+        </div>
+        <div class="player-actions-row">
+          <button class="toggle-active-btn" (click)="onToggleCharacterActive(player.id!, $event)"
+            [title]="player.isActive ? 'Hide Player from Numpad' : 'Show Player on Numpad'">
+            {{ player.isActive ? '👁️' : '🙈' }}
+          </button>
+          <button class="edit-item-small-btn" (click)="onEditCharacter(player, $event)" title="Edit Player Details">
+            ✏️
+          </button>
+          @if (characters().length > 1) {
+          <button class="delete-item-btn" (click)="onRemoveCharacter(player.id!, $event)"
+            title="Remove Player from Campaign">
+            ×
+          </button>
+          }
+        </div>
+      </div>
+      }
+      }
+    </div>
+  </div>
+
+  <!-- Sidebar Footer (Backup & Restore) -->
+  <div class="sidebar-footer">
+    <button class="sidebar-footer-btn" (click)="onExportBackup()"
+      title="Export all campaigns, players, and rolls to a JSON backup file">
+      💾 Backup Data
+    </button>
+    <button class="sidebar-footer-btn" (click)="restoreFileInput.click()"
+      title="Restore database from a previously exported JSON backup file">
+      📂 Restore Backup
+    </button>
+    <input #restoreFileInput type="file" style="display: none" accept=".json" (change)="onImportBackup($event)" />
+  </div>
+</aside>

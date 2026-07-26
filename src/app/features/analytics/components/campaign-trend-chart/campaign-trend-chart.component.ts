@@ -1,7 +1,7 @@
 import { Component, ElementRef, ViewChild, input, effect, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Chart, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Title } from 'chart.js';
-import { DatabaseService, Character, Session, Roll } from '../../../../core/db/database.service';
+import { Chart, ChartDataset, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Title } from 'chart.js';
+import { DatabaseService, Character } from '../../../../core/db/database.service';
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Title);
 
@@ -19,18 +19,18 @@ export interface SessionDataPoint {
   styleUrl: './campaign-trend-chart.component.css',
 })
 export class CampaignTrendChartComponent implements OnDestroy {
-  @ViewChild('chartCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('chartCanvas') public canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private readonly db = inject(DatabaseService);
 
-  campaignId = input<number | undefined>(undefined);
-  characters = input<Character[]>([]);
-  metric = signal<'average' | 'luckPct'>('average');
+  public readonly campaignId = input<number | undefined>(undefined);
+  public readonly characters = input<Character[]>([]);
+  public readonly metric = signal<'average' | 'luckPct'>('average');
 
-  isLoading = signal<boolean>(false);
+  public readonly isLoading = signal<boolean>(false);
   private chart: Chart | null = null;
 
-  constructor() {
+  public constructor() {
     effect(() => {
       const campId = this.campaignId();
       const chars = this.characters();
@@ -41,7 +41,7 @@ export class CampaignTrendChartComponent implements OnDestroy {
     });
   }
 
-  setMetric(m: 'average' | 'luckPct') {
+  public setMetric(m: 'average' | 'luckPct') {
     this.metric.set(m);
   }
 
@@ -117,7 +117,7 @@ export class CampaignTrendChartComponent implements OnDestroy {
     }
   }
 
-  private renderChart(labels: string[], datasets: any[], m: 'average' | 'luckPct') {
+  private renderChart(labels: string[], datasets: ChartDataset<'line'>[], m: 'average' | 'luckPct') {
     if (!this.canvasRef) return;
     const canvas = this.canvasRef.nativeElement;
 
@@ -165,7 +165,10 @@ export class CampaignTrendChartComponent implements OnDestroy {
         },
         scales: {
           x: {
-            ticks: { color: '#cbd5e1' },
+            ticks: {
+              color: '#cbd5e1',
+              maxTicksLimit: 12,
+            },
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
           },
           y: {
@@ -186,7 +189,7 @@ export class CampaignTrendChartComponent implements OnDestroy {
     }
   }
 
-  ngOnDestroy() {
+  public ngOnDestroy() {
     this.destroyChart();
   }
 }

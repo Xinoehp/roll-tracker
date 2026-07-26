@@ -1,0 +1,6 @@
+/* Session dialog component styles (inherited from global styles.css) */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}

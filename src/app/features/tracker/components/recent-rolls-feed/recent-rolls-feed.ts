@@ -10,14 +10,14 @@ import { Character, Roll } from '../../../../core/db/database.service';
   styleUrl: './recent-rolls-feed.css',
 })
 export class RecentRollsFeedComponent {
-  readonly state = inject(SessionStateService);
+  public readonly state = inject(SessionStateService);
 
   // Filters state (filters by characterId)
-  selectedCharacterId = signal<number | null>(null);
-  rollFilterType = signal<'all' | 'crit-success' | 'crit-fail'>('all');
+  public readonly selectedCharacterId = signal<number | null>(null);
+  public readonly rollFilterType = signal<'all' | 'crit-success' | 'crit-fail'>('all');
 
   // Map to resolve character details quickly
-  readonly characterMap = computed<Map<number, Character>>(() => {
+  public readonly characterMap = computed<Map<number, Character>>(() => {
     const map = new Map<number, Character>();
     for (const char of this.state.activeCharacters()) {
       if (char.id !== undefined) {
@@ -28,7 +28,7 @@ export class RecentRollsFeedComponent {
   });
 
   // Filtered rolls computed list (newest first)
-  readonly filteredRolls = computed<Roll[]>(() => {
+  public readonly filteredRolls = computed<Roll[]>(() => {
     let rollsList = this.state.rolls();
     const charId = this.selectedCharacterId();
     const filter = this.rollFilterType();
@@ -49,19 +49,19 @@ export class RecentRollsFeedComponent {
     return [...rollsList].reverse();
   });
 
-  setPlayerFilter(characterId: number | null) {
+  public setPlayerFilter(characterId: number | null) {
     this.selectedCharacterId.set(characterId);
   }
 
-  setRollFilter(filter: 'all' | 'crit-success' | 'crit-fail') {
+  public setRollFilter(filter: 'all' | 'crit-success' | 'crit-fail') {
     this.rollFilterType.set(filter);
   }
 
-  deleteRoll(rollId: number) {
+  public deleteRoll(rollId: number) {
     this.state.deleteRoll(rollId);
   }
 
-  getPlayerName(characterId: number): string {
+  public getPlayerName(characterId: number): string {
     const char = this.state.activeCharacters().find(c => c.id === characterId);
     if (!char) return 'Unknown';
     return char.isDM
@@ -71,7 +71,7 @@ export class RecentRollsFeedComponent {
         : char.playerName || 'Unknown';
   }
 
-  getPlayerColor(characterId: number): string {
+  public getPlayerColor(characterId: number): string {
     return this.characterMap().get(characterId)?.color || '#9ca3af';
   }
 }

@@ -12,14 +12,14 @@ Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, L
   styleUrl: './roll-distribution-chart.component.css',
 })
 export class RollDistributionChartComponent implements OnDestroy {
-  @ViewChild('chartCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('chartCanvas') public canvasRef!: ElementRef<HTMLCanvasElement>;
 
-  rolls = input<number[]>([]);
-  playerLabel = input<string>('Overall');
+  public readonly rolls = input<number[]>([]);
+  public readonly playerLabel = input<string>('Overall');
 
   private chart: Chart | null = null;
 
-  constructor() {
+  public constructor() {
     effect(() => {
       const rollValues = this.rolls();
       const label = this.playerLabel();
@@ -111,7 +111,7 @@ export class RollDistributionChartComponent implements OnDestroy {
     });
   }
 
-  ngOnDestroy() {
+  public ngOnDestroy() {
     if (this.chart) {
       this.chart.destroy();
       this.chart = null;

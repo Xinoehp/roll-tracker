@@ -37,17 +37,17 @@ export interface ParsedRecapData {
 })
 export class SessionRecapViewComponent {
   // Inputs matching our optimized GZIP format
-  campaignName = input<string>('');
-  sessionName = input<string>('');
-  sessionDate = input<string>('');
-  recapText = input<string>('');
-  playersData = input<RecapPlayerData[]>([]);
+  public readonly campaignName = input<string>('');
+  public readonly sessionName = input<string>('');
+  public readonly sessionDate = input<string>('');
+  public readonly recapText = input<string>('');
+  public readonly playersData = input<RecapPlayerData[]>([]);
 
   // Active View Mode ('cards' | 'narrative' | 'table')
-  viewMode = signal<'cards' | 'narrative' | 'table'>('cards');
+  public readonly viewMode = signal<'cards' | 'narrative' | 'table'>('cards');
 
   // Preset color list matching the app's theme
-  readonly presetColors = [
+  public readonly presetColors = [
     '#f59e0b', // Amber
     '#ef4444', // Red
     '#3b82f6', // Blue
@@ -59,11 +59,11 @@ export class SessionRecapViewComponent {
   ];
 
   // Column Sorting signals
-  sortBy = signal<string>('average');
-  sortDesc = signal<boolean>(true);
+  public readonly sortBy = signal<string>('average');
+  public readonly sortDesc = signal<boolean>(true);
 
   // Computed parser that splits recapText into structured player cards
-  readonly parsedRecap = computed<ParsedRecapData>(() => {
+  public readonly parsedRecap = computed<ParsedRecapData>(() => {
     const raw = this.recapText().trim();
     if (!raw) {
       return { headerTitle: '', introText: '', highlights: [], outroText: '' };
@@ -109,8 +109,8 @@ export class SessionRecapViewComponent {
       // Check if paragraph contains player header line e.g. "🔥 Campbell The Comeback Kid:" followed by story
       // Or combined "🔥 Campbell The Comeback Kid:\nStory text..."
       const lines = p.split('\n');
-      let headerLine = '';
-      let storyText = '';
+      let headerLine: string;
+      let storyText: string;
 
       if (lines.length >= 2 && lines[0].includes(':')) {
         headerLine = lines[0].trim();
@@ -159,11 +159,11 @@ export class SessionRecapViewComponent {
         matchedPlayer = players.find(pl => pl.characterName && titleLine.toLowerCase().startsWith(pl.characterName.toLowerCase()));
       }
 
-      let playerName = matchedPlayer ? matchedPlayer.playerName : titleLine;
-      let characterName = matchedPlayer ? matchedPlayer.characterName : '';
-      let isDM = matchedPlayer ? matchedPlayer.isDM : titleLine.toLowerCase().includes('dungeon master');
-      let color = matchedPlayer ? this.getPlayerColor(players.indexOf(matchedPlayer)) : '#3b82f6';
-      let stats = matchedPlayer ? matchedPlayer.stats : undefined;
+      const playerName = matchedPlayer ? matchedPlayer.playerName : titleLine;
+      const characterName = matchedPlayer ? matchedPlayer.characterName : '';
+      const isDM = matchedPlayer ? matchedPlayer.isDM : titleLine.toLowerCase().includes('dungeon master');
+      const color = matchedPlayer ? this.getPlayerColor(players.indexOf(matchedPlayer)) : '#3b82f6';
+      const stats = matchedPlayer ? matchedPlayer.stats : undefined;
 
       // Extract title after player name if present
       let title = '';
@@ -193,7 +193,7 @@ export class SessionRecapViewComponent {
     return { headerTitle, introText, highlights, outroText };
   });
 
-  toggleSort(field: string) {
+  public toggleSort(field: string) {
     if (this.sortBy() === field) {
       this.sortDesc.set(!this.sortDesc());
     } else {
@@ -203,19 +203,19 @@ export class SessionRecapViewComponent {
   }
 
   // Get color dynamically for a player row
-  getPlayerColor(index: number): string {
+  public getPlayerColor(index: number): string {
     return this.presetColors[index % this.presetColors.length];
   }
 
   // Sorted players list
-  sortedPlayers = computed(() => {
+  public readonly sortedPlayers = computed(() => {
     const list = [...this.playersData()];
     const field = this.sortBy();
     const desc = this.sortDesc();
-    //console.log(list);
+    
     list.sort((a, b) => {
-      let valA: any;
-      let valB: any;
+      let valA: string | number;
+      let valB: string | number;
 
       if (field === 'name') {
         valA = a.playerName.toLowerCase();
@@ -249,7 +249,7 @@ export class SessionRecapViewComponent {
   });
 
   // Highlight extremes for cells: returns 'best', 'worst', or null
-  getCellHighlight(player: RecapPlayerData, colType: string): 'best' | 'worst' | null {
+  public getCellHighlight(player: RecapPlayerData, colType: string): 'best' | 'worst' | null {
     const validPlayers = this.playersData().filter(p => p.stats[0] > 0); // exclude players with 0 rolls from highlights
     if (validPlayers.length < 2) return null;
 
