@@ -527,5 +527,21 @@ describe('Recap Service and URL Sharing Validation', () => {
     const constHighlight = hConst.find(h => h.id === 'consistent_crusader');
     expect(constHighlight).toBeDefined();
     expect(constHighlight?.emoji).toBe('🛡️');
+
+    // 5. Check Phoenix Redemption highlight (bad start -> great finish)
+    const phoenixRolls = [2, 4, 3, 18, 19, 20];
+    const hPhoenix = recapService.generateHighlights('Dan', 'Fighter', false, phoenixRolls, context);
+    const phoenixHighlight = hPhoenix.find(h => h.id === 'phoenix_redemption');
+    expect(phoenixHighlight).toBeDefined();
+    expect(phoenixHighlight?.emoji).toBe('🦅');
+    expect(phoenixHighlight?.label).toContain('The Phoenix');
+
+    // 6. Check Peaked Early / Momentum Cliff highlight (great start -> bad finish)
+    const peakedRolls = [18, 19, 20, 2, 4, 3];
+    const hPeaked = recapService.generateHighlights('Eve', 'Cleric', false, peakedRolls, context);
+    const peakedHighlight = hPeaked.find(h => h.id === 'peaked_early');
+    expect(peakedHighlight).toBeDefined();
+    expect(peakedHighlight?.emoji).toBe('☄️');
+    expect(peakedHighlight?.label).toContain('Peaked Early');
   });
 });

@@ -796,4 +796,88 @@ export const HIGHLIGHT_RULES: HighlightRule[] = [
       return (n1 / rolls.length * 20) >= 2.0;
     },
   },
+
+  // ── The Phoenix / Zero to Hero (Redemption Arc) ──
+  {
+    id: 'phoenix_redemption',
+    emoji: '🦅',
+    label: (rolls) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      const diff = (avg2 - avg1).toFixed(1);
+      return `The Phoenix (+${diff} avg in 2nd half)`;
+    },
+    generateText: (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `${dn} rose like a phoenix! After a rough start (avg ${avg1} in the first half), they took it personally and exploded in the second half with a stellar ${avg2} average! A true zero-to-hero redemption arc.`;
+    },
+    rawProbability: (rolls) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      const diff = avg2 - avg1;
+      const z = diff * Math.sqrt(rolls.length / 2) / 5.77;
+      return Math.max(1e-6, 1 - normalCDF(z));
+    },
+    improbabilityScore: (rolls) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      const diff = avg2 - avg1;
+      const z = diff * Math.sqrt(rolls.length / 2) / 5.77;
+      return pValueToScore(1 - normalCDF(z));
+    },
+    isValid: (rolls) => {
+      if (rolls.length < 6) return false;
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      return avg1 <= 9.5 && avg2 >= 12.0 && (avg2 - avg1) >= 3.5;
+    },
+  },
+
+  // ── Peaked Early / Burnout (Momentum Cliff Drop) ──
+  {
+    id: 'peaked_early',
+    emoji: '☄️',
+    label: (rolls) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      const drop = (avg1 - avg2).toFixed(1);
+      return `Peaked Early (−${drop} avg in 2nd half)`;
+    },
+    generateText: (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `${dn} peaked early! After a dominant first half (avg ${avg1}), their momentum hit a cliff drop down to a ${avg2} average in the second half. A brutal fall from grace!`;
+    },
+    rawProbability: (rolls) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      const drop = avg1 - avg2;
+      const z = drop * Math.sqrt(rolls.length / 2) / 5.77;
+      return Math.max(1e-6, 1 - normalCDF(z));
+    },
+    improbabilityScore: (rolls) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      const drop = avg1 - avg2;
+      const z = drop * Math.sqrt(rolls.length / 2) / 5.77;
+      return pValueToScore(1 - normalCDF(z));
+    },
+    isValid: (rolls) => {
+      if (rolls.length < 6) return false;
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+      const avg2 = rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid);
+      return avg1 >= 12.0 && avg2 <= 9.5 && (avg1 - avg2) >= 3.5;
+    },
+  },
 ];

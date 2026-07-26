@@ -206,6 +206,20 @@ export const HIGHLIGHT_TITLES: Record<string, string[]> = {
     'Spectator Mode',
     'AFK',
   ],
+  phoenix_redemption: [
+    'The Phoenix',
+    'Took It Personally',
+    'Zero to Hero',
+    'Rising from Ashes',
+    'Redemption Arc',
+  ],
+  peaked_early: [
+    'Peaked Early',
+    'Burnout',
+    'God to Garbage',
+    'Fading Flame',
+    'The Cliff Drop',
+  ],
 };
 
 // ─── Alternative Narrative Text Variants ───────────────────────────────────────
@@ -718,6 +732,52 @@ export const HIGHLIGHT_TEXT_VARIANTS: Record<string, TextGenerator[]> = {
     },
     (_rolls, _ctx, _pn, dn) => {
       return `Not a single roll from ${dn} this time — a true ghost at the table. But every great story needs its silent witnesses.`;
+    },
+  ],
+
+  // ── The Phoenix / Zero to Hero ──────────────────────────────────────────────
+
+  phoenix_redemption: [
+    (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `${dn} rose like a phoenix! After a rough start (avg ${avg1} in the first half), they took it personally and exploded in the second half with a stellar ${avg2} average! A true zero-to-hero redemption arc.`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `${dn} refused to go down without a fight — turning a grim first-half average of ${avg1} into a soaring ${avg2} in the back half. Talk about taking it personally!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `From zero to hero! ${dn} shook off an early slump (avg ${avg1}) and blazed through the second half with a dominant ${avg2} average. An unforgettable comeback!`;
+    },
+  ],
+
+  // ── Peaked Early / Burnout ──────────────────────────────────────────────────
+
+  peaked_early: [
+    (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `${dn} peaked early! After a dominant first half (avg ${avg1}), their momentum hit a cliff drop down to a ${avg2} average in the second half. A brutal fall from grace!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `${dn} blazed bright early on with a commanding ${avg1} average, but suffered total burnout down the stretch, slumping to ${avg2}. The dice gods take back what they give!`;
+    },
+    (rolls, _ctx, _pn, dn) => {
+      const mid = Math.floor(rolls.length / 2);
+      const avg1 = (rolls.slice(0, mid).reduce((a, b) => a + b, 0) / mid).toFixed(1);
+      const avg2 = (rolls.slice(mid).reduce((a, b) => a + b, 0) / (rolls.length - mid)).toFixed(1);
+      return `A classic case of god to garbage — ${dn} started like an unstoppable force (avg ${avg1}) before crashing down to a ${avg2} average in the second act.`;
     },
   ],
 };
