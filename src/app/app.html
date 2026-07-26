@@ -54,7 +54,7 @@
         } @else {
         @for (sess of sessionsList(); track sess.id) {
         <div class="session-list-item-wrapper" [class.active]="state.activeSession()?.id === sess.id">
-          <button class="list-item" [class.active]="state.activeSession()?.id === sess.id" (click)="selectSession(sess)">
+          <button class="list-item" (click)="selectSession(sess)">
             <div class="list-item-content">
               <span class="sess-title">{{ sess.name }}</span>
               <span class="sess-date">{{ sess.date }}</span>
